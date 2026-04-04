@@ -5,6 +5,139 @@
 
 'use strict';
 
+// ─── Translations ──────────────────────────────────────────
+const TRANSLATIONS = {
+  nl: {
+    title: 'Gewicht & Balans',
+    subtitle: 'PH-GYS — Reims/Cessna F172N',
+    disclaimer: 'De gezagvoerder is verantwoordelijk voor de juistheid van alle berekeningen.',
+    langToggle: 'EN',
+    colItem: 'Item',
+    colWeight: 'Gewicht (kg)',
+    colArm: 'Arm (m)',
+    colMoment: 'Moment (m.kg)',
+    emptyWeight: 'Leeg Gewicht',
+    pilotFrontPax: 'Piloot & Voorpassagier',
+    rearPax: 'Achterpassagiers',
+    baggage1: 'Bagageruimte 1 (max 54 kg)',
+    baggage2: 'Bagageruimte 2 (max 23 kg)',
+    zfw: 'Gewicht Zonder Brandstof',
+    fuel: 'Brandstof (max 190 ltr)',
+    rampWeight: 'Platformgewicht',
+    taxiFuel: 'Taxibrandstof',
+    takeoffWeight: 'Startgewicht',
+    tripFuel: 'Reisbrandstof',
+    landingWeight: 'Landingsgewicht',
+    liters: 'liter',
+    print: 'Afdrukken',
+    reset: 'Herstellen',
+    graphTitle: 'Zwaartepunt Moment Envelope',
+    cgLabel: 'ZP',
+    svsWebsite: 'SVS Website',
+    dateLabel: 'Datum:',
+    timeLabel: 'Tijd (UTC):',
+    picName: 'Naam Gezagvoerder:',
+    picSignature: 'Handtekening Gezagvoerder:',
+    picBlock: 'Ondertekening Gezagvoerder',
+    picDisclaimer: 'De gezagvoerder is verantwoordelijk voor de juistheid van alle berekeningen.',
+    // Graph labels
+    graphWeight: 'Gewicht (kg)',
+    graphMoment: 'Moment (m\u00B7kg)',
+    graphNormal: 'Normaal',
+    graphUtility: 'Utility',
+    graphTakeoff: 'Startgewicht',
+    graphLanding: 'Landingsgewicht',
+    graphOutside: 'Buiten Envelope',
+    graphEnvelope: 'Normaal / Utility',
+    // Warning messages
+    ok: 'OK',
+    overMax: 'BOVEN MAX',
+    cgAft: 'ZP ACHTER',
+    cgFwd: 'ZP VOOR',
+    bag1Over: 'BAG1 OVER',
+    bag2Over: 'BAG2 OVER',
+    bagTotalOver: 'BAG TOTAAL OVER',
+    fuelOver: 'BRANDSTOF OVER',
+    taxiOver: 'TAXI > BRANDSTOF',
+    tripOver: 'REIS > BRANDSTOF',
+    maxRamp: 'max 1092 kg',
+    maxTow: 'max 1089 kg',
+  },
+  en: {
+    title: 'Weight & Balance',
+    subtitle: 'PH-GYS — Reims/Cessna F172N',
+    disclaimer: 'The PIC is responsible for ensuring all calculations are correct.',
+    langToggle: 'NL',
+    colItem: 'Item',
+    colWeight: 'Weight (kg)',
+    colArm: 'Arm (m)',
+    colMoment: 'Moment (m.kg)',
+    emptyWeight: 'Empty Weight',
+    pilotFrontPax: 'Pilot & Front Passenger',
+    rearPax: 'Rear Passengers',
+    baggage1: 'Baggage Area 1 (max 54 kg)',
+    baggage2: 'Baggage Area 2 (max 23 kg)',
+    zfw: 'Zero Fuel Weight',
+    fuel: 'Fuel (max 190 ltr)',
+    rampWeight: 'Ramp Weight',
+    taxiFuel: 'Taxi Fuel',
+    takeoffWeight: 'Takeoff Weight',
+    tripFuel: 'Trip Fuel',
+    landingWeight: 'Landing Weight',
+    liters: 'liters',
+    print: 'Print',
+    reset: 'Reset',
+    graphTitle: 'CG Moment Envelope',
+    cgLabel: 'CG',
+    svsWebsite: 'SVS Website',
+    dateLabel: 'Date:',
+    timeLabel: 'Time (UTC):',
+    picName: 'PIC Name:',
+    picSignature: 'PIC Signature:',
+    picBlock: 'PIC Declaration',
+    picDisclaimer: 'The PIC is responsible for ensuring all calculations are correct.',
+    // Graph labels
+    graphWeight: 'Weight (kg)',
+    graphMoment: 'Moment (m\u00B7kg)',
+    graphNormal: 'Normal',
+    graphUtility: 'Utility',
+    graphTakeoff: 'Takeoff Weight',
+    graphLanding: 'Landing Weight',
+    graphOutside: 'Outside Envelope',
+    graphEnvelope: 'Normal / Utility',
+    // Warning messages
+    ok: 'OK',
+    overMax: 'OVER MAX',
+    cgAft: 'CG AFT',
+    cgFwd: 'CG FWD',
+    bag1Over: 'BAG1 OVER',
+    bag2Over: 'BAG2 OVER',
+    bagTotalOver: 'BAG TOTAL OVER',
+    fuelOver: 'FUEL OVER',
+    taxiOver: 'TAXI > FUEL',
+    tripOver: 'TRIP > FUEL',
+    maxRamp: 'max 1092 kg',
+    maxTow: 'max 1089 kg',
+  },
+};
+
+let currentLang = localStorage.getItem('lang') || 'nl';
+
+// ─── Language Switching ────────────────────────────────────
+function setLanguage(lang) {
+  currentLang = lang;
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (TRANSLATIONS[lang][key]) {
+      el.textContent = TRANSLATIONS[lang][key];
+    }
+  });
+  localStorage.setItem('lang', lang);
+  // Re-run calculate to update warnings and redraw graph with translated labels
+  calculate();
+}
+
 // ─── Aircraft Data Constants ────────────────────────────────
 const AIRCRAFT = {
   registration: 'PH-GYS',
@@ -238,24 +371,25 @@ function updateWarnings({ bag1Kg, bag2Kg, fuelL, taxiL, tripL,
 
   // ── ZFW status ────────────────────────────────────────────
   // No specific weight limit for ZFW, but flag baggage issues
+  const t = TRANSLATIONS[currentLang];
   const zfwIssues = [];
-  if (bag1Over)    zfwIssues.push('BAG1 OVER');
-  if (bag2Over)    zfwIssues.push('BAG2 OVER');
-  if (combBagOver && !bag1Over && !bag2Over) zfwIssues.push('BAG TOTAL OVER');
+  if (bag1Over)    zfwIssues.push(t.bag1Over);
+  if (bag2Over)    zfwIssues.push(t.bag2Over);
+  if (combBagOver && !bag1Over && !bag2Over) zfwIssues.push(t.bagTotalOver);
   if (zfwIssues.length > 0) {
     setStatus('status-zfw', false, zfwIssues[0]);
   } else {
-    setStatus('status-zfw', true, 'OK');
+    setStatus('status-zfw', true, t.ok);
   }
 
   // ── Ramp Weight status ────────────────────────────────────
   const rampOver = rampWeight > AIRCRAFT.maxRampWeight;
   if (fuelOver) {
-    setStatus('status-ramp', false, 'FUEL OVER MAX');
+    setStatus('status-ramp', false, t.fuelOver);
   } else if (rampOver) {
-    setStatus('status-ramp', false, 'OVER MAX');
+    setStatus('status-ramp', false, t.overMax);
   } else {
-    setStatus('status-ramp', true, 'OK');
+    setStatus('status-ramp', true, t.ok);
   }
 
   // ── Takeoff Weight status ─────────────────────────────────
@@ -265,15 +399,15 @@ function updateWarnings({ bag1Kg, bag2Kg, fuelL, taxiL, tripL,
   const towCgAft    = towWeight > 0 && !towOver &&
                       cgTow > getAftCGLimit(towWeight, 'normal');
   if (taxiOver) {
-    setStatus('status-tow', false, 'TAXI > FUEL');
+    setStatus('status-tow', false, t.taxiOver);
   } else if (towOver) {
-    setStatus('status-tow', false, 'OVER MAX');
+    setStatus('status-tow', false, t.overMax);
   } else if (towCgFwd) {
-    setStatus('status-tow', false, 'CG FWD');
+    setStatus('status-tow', false, t.cgFwd);
   } else if (towCgAft) {
-    setStatus('status-tow', false, 'CG AFT');
+    setStatus('status-tow', false, t.cgAft);
   } else if (towWeight > 0) {
-    setStatus('status-tow', true, 'OK');
+    setStatus('status-tow', true, t.ok);
   } else {
     setStatus('status-tow', true, '');
   }
@@ -284,13 +418,13 @@ function updateWarnings({ bag1Kg, bag2Kg, fuelL, taxiL, tripL,
   const ldwCgAft    = ldwWeight > 0 &&
                       cgLdw > getAftCGLimit(ldwWeight, 'normal');
   if (tripOver) {
-    setStatus('status-ldw', false, 'TRIP > FUEL');
+    setStatus('status-ldw', false, t.tripOver);
   } else if (ldwCgFwd) {
-    setStatus('status-ldw', false, 'CG FWD');
+    setStatus('status-ldw', false, t.cgFwd);
   } else if (ldwCgAft) {
-    setStatus('status-ldw', false, 'CG AFT');
+    setStatus('status-ldw', false, t.cgAft);
   } else if (ldwWeight > 0) {
-    setStatus('status-ldw', true, 'OK');
+    setStatus('status-ldw', true, t.ok);
   } else {
     setStatus('status-ldw', true, '');
   }
@@ -357,7 +491,7 @@ function drawGraph() {
   ctx.fillStyle = '#333';
   ctx.font = 'bold 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('CG Moment Envelope', W / 2, 22);
+  ctx.fillText(TRANSLATIONS[currentLang].graphTitle, W / 2, 22);
 
   // ── 3. Grid lines & labels ────────────────────────────────
   ctx.font = '11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
@@ -414,7 +548,7 @@ function drawGraph() {
   ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
-  ctx.fillText('Moment (m\u00B7kg)', W / 2, H - 14);
+  ctx.fillText(TRANSLATIONS[currentLang].graphMoment, W / 2, H - 14);
 
   // Y-axis label (rotated)
   ctx.save();
@@ -422,7 +556,7 @@ function drawGraph() {
   ctx.rotate(-Math.PI / 2);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('Weight (kg)', 0, 0);
+  ctx.fillText(TRANSLATIONS[currentLang].graphWeight, 0, 0);
   ctx.restore();
 
   // ── 4. Normal Category envelope (filled) ──────────────────
@@ -454,7 +588,7 @@ function drawGraph() {
   ctx.font = 'bold 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'bottom';
-  ctx.fillText('Normal', toX(1089 * 1.10), toY(1089) - 6);
+  ctx.fillText(TRANSLATIONS[currentLang].graphNormal, toX(1089 * 1.10), toY(1089) - 6);
 
   // ── 5. Utility Category envelope (dashed) ─────────────────
   const utilityPoly = [
@@ -485,7 +619,7 @@ function drawGraph() {
   ctx.font = '10px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'bottom';
-  ctx.fillText('Utility', toX(952 * 0.96), toY(952) - 4);
+  ctx.fillText(TRANSLATIONS[currentLang].graphUtility, toX(952 * 0.96), toY(952) - 4);
 
   // ── 6. Plot Takeoff and Landing points ─────────────────────
   const { towWeight, towMoment, ldwWeight, ldwMoment } = graphData;
@@ -520,8 +654,8 @@ function drawGraph() {
     ctx.fillText(label, x + 11, y);
   }
 
-  drawPoint(towMoment, towWeight, '#1565C0', 'TOW');
-  drawPoint(ldwMoment, ldwWeight, '#2E7D32', 'LDW');
+  drawPoint(towMoment, towWeight, '#1565C0', currentLang === 'nl' ? 'START' : 'TOW');
+  drawPoint(ldwMoment, ldwWeight, '#2E7D32', currentLang === 'nl' ? 'LANDING' : 'LDW');
 
   // ── 7. Legend ──────────────────────────────────────────────
   const legendX = W - padding.right - 120;
@@ -542,21 +676,21 @@ function drawGraph() {
   ctx.arc(legendX + 6, legendY + 8, 4, 0, Math.PI * 2);
   ctx.fillStyle = '#1565C0';
   ctx.fill();
-  ctx.fillText('Takeoff Weight', legendX + 16, legendY + 8);
+  ctx.fillText(TRANSLATIONS[currentLang].graphTakeoff, legendX + 16, legendY + 8);
 
   // LDW legend
   ctx.beginPath();
   ctx.arc(legendX + 6, legendY + 24, 4, 0, Math.PI * 2);
   ctx.fillStyle = '#2E7D32';
   ctx.fill();
-  ctx.fillText('Landing Weight', legendX + 16, legendY + 24);
+  ctx.fillText(TRANSLATIONS[currentLang].graphLanding, legendX + 16, legendY + 24);
 
   // Outside legend
   ctx.beginPath();
   ctx.arc(legendX + 6, legendY + 40, 4, 0, Math.PI * 2);
   ctx.fillStyle = '#C62828';
   ctx.fill();
-  ctx.fillText('Outside Envelope', legendX + 16, legendY + 40);
+  ctx.fillText(TRANSLATIONS[currentLang].graphOutside, legendX + 16, legendY + 40);
 
   // Normal envelope legend
   ctx.fillStyle = 'rgba(232, 115, 26, 0.3)';
@@ -565,7 +699,7 @@ function drawGraph() {
   ctx.lineWidth = 1;
   ctx.strokeRect(legendX, legendY + 52, 12, 4);
   ctx.fillStyle = '#555';
-  ctx.fillText('Normal / Utility', legendX + 16, legendY + 54);
+  ctx.fillText(TRANSLATIONS[currentLang].graphEnvelope, legendX + 16, legendY + 54);
 }
 
 // ─── Debounce helper ────────────────────────────────────────
@@ -590,9 +724,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el) el.addEventListener('input', calculate);
   });
 
+  // Language toggle
+  document.getElementById('lang-toggle').addEventListener('click', () => {
+    setLanguage(currentLang === 'nl' ? 'en' : 'nl');
+  });
+
   // Redraw graph on window resize (debounced)
   window.addEventListener('resize', debounce(drawGraph, 150));
 
-  // Initialize on load
-  calculate();
+  // Initialize on load — apply saved or default language
+  setLanguage(currentLang);
 });
