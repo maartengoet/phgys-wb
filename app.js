@@ -172,7 +172,12 @@ function calculate() {
   setText('moment-ldw', ldwMoment.toFixed(2));
   setText('cg-ldw',     cgLdw.toFixed(2));
 
-  // TODO: updateWarnings() — Task 5
+  // Validation & warnings (Task 5)
+  updateWarnings({
+    bag1Kg, bag2Kg, fuelL, taxiL, tripL,
+    rampWeight, towWeight, ldwWeight,
+    cgTow, cgLdw,
+  });
 
   // Update graph data and redraw CG Moment Envelope
   graphData.towWeight = towWeight;
@@ -180,6 +185,115 @@ function calculate() {
   graphData.ldwWeight = ldwWeight;
   graphData.ldwMoment = ldwMoment;
   drawGraph();
+}
+
+// ─── Validation & Warnings ─────────────────────────────────
+
+/**
+ * Helper: set or clear the input-error class on an element.
+ */
+function setInputError(id, isError) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('input-error', isError);
+}
+
+/**
+ * Helper: update a status span with ok/warn state and message.
+ */
+function setStatus(id, ok, message) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove('ok', 'warn');
+  if (message) {
+    el.classList.add(ok ? 'ok' : 'warn');
+    el.textContent = message;
+  } else {
+    el.textContent = '';
+  }
+}
+
+/**
+ * Check all weight / CG limits and update DOM indicators.
+ * Called from calculate() after every recalc.
+ */
+function updateWarnings({ bag1Kg, bag2Kg, fuelL, taxiL, tripL,
+                          rampWeight, towWeight, ldwWeight,
+                          cgTow, cgLdw }) {
+  const S = AIRCRAFT.stations;
+
+  // ── Input-level checks ────────────────────────────────────
+  const bag1Over   = bag1Kg > S.bag1.maxKg;
+  const bag2Over   = bag2Kg > S.bag2.maxKg;
+  const combBagOver = (bag1Kg + bag2Kg) > AIRCRAFT.maxBaggageCombined;
+  const fuelOver   = fuelL > AIRCRAFT.maxFuelLiters;
+  const taxiOver   = taxiL > fuelL;
+  const tripOver   = tripL > (fuelL - taxiL);
+
+  setInputError('input-bag1', bag1Over || combBagOver);
+  setInputError('input-bag2', bag2Over || combBagOver);
+  setInputError('input-fuel', fuelOver);
+  setInputError('input-taxi', taxiOver);
+  setInputError('input-trip', tripOver);
+
+  // ── ZFW status ────────────────────────────────────────────
+  // No specific weight limit for ZFW, but flag baggage issues
+  const zfwIssues = [];
+  if (bag1Over)    zfwIssues.push('BAG1 OVER');
+  if (bag2Over)    zfwIssues.push('BAG2 OVER');
+  if (combBagOver && !bag1Over && !bag2Over) zfwIssues.push('BAG TOTAL OVER');
+  if (zfwIssues.length > 0) {
+    setStatus('status-zfw', false, zfwIssues[0]);
+  } else {
+    setStatus('status-zfw', true, 'OK');
+  }
+
+  // ── Ramp Weight status ────────────────────────────────────
+  const rampOver = rampWeight > AIRCRAFT.maxRampWeight;
+  if (fuelOver) {
+    setStatus('status-ramp', false, 'FUEL OVER MAX');
+  } else if (rampOver) {
+    setStatus('status-ramp', false, 'OVER MAX');
+  } else {
+    setStatus('status-ramp', true, 'OK');
+  }
+
+  // ── Takeoff Weight status ─────────────────────────────────
+  const towOver     = towWeight > AIRCRAFT.maxTakeoffWeight;
+  const towCgFwd    = towWeight > 0 && !towOver &&
+                      cgTow < getForwardCGLimit(towWeight, 'normal');
+  const towCgAft    = towWeight > 0 && !towOver &&
+                      cgTow > getAftCGLimit(towWeight, 'normal');
+  if (taxiOver) {
+    setStatus('status-tow', false, 'TAXI > FUEL');
+  } else if (towOver) {
+    setStatus('status-tow', false, 'OVER MAX');
+  } else if (towCgFwd) {
+    setStatus('status-tow', false, 'CG FWD');
+  } else if (towCgAft) {
+    setStatus('status-tow', false, 'CG AFT');
+  } else if (towWeight > 0) {
+    setStatus('status-tow', true, 'OK');
+  } else {
+    setStatus('status-tow', true, '');
+  }
+
+  // ── Landing Weight status ─────────────────────────────────
+  const ldwCgFwd    = ldwWeight > 0 &&
+                      cgLdw < getForwardCGLimit(ldwWeight, 'normal');
+  const ldwCgAft    = ldwWeight > 0 &&
+                      cgLdw > getAftCGLimit(ldwWeight, 'normal');
+  if (tripOver) {
+    setStatus('status-ldw', false, 'TRIP > FUEL');
+  } else if (ldwCgFwd) {
+    setStatus('status-ldw', false, 'CG FWD');
+  } else if (ldwCgAft) {
+    setStatus('status-ldw', false, 'CG AFT');
+  } else if (ldwWeight > 0) {
+    setStatus('status-ldw', true, 'OK');
+  } else {
+    setStatus('status-ldw', true, '');
+  }
 }
 
 // ─── Graph State (set by calculate(), read by drawGraph()) ──
