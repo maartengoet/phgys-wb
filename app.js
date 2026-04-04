@@ -173,7 +173,294 @@ function calculate() {
   setText('cg-ldw',     cgLdw.toFixed(2));
 
   // TODO: updateWarnings() — Task 5
-  // TODO: drawGraph()     — Task 4
+
+  // Update graph data and redraw CG Moment Envelope
+  graphData.towWeight = towWeight;
+  graphData.towMoment = towMoment;
+  graphData.ldwWeight = ldwWeight;
+  graphData.ldwMoment = ldwMoment;
+  drawGraph();
+}
+
+// ─── Graph State (set by calculate(), read by drawGraph()) ──
+let graphData = {
+  towWeight: 0, towMoment: 0,
+  ldwWeight: 0, ldwMoment: 0,
+};
+
+// ─── Point-in-Polygon test (ray-casting) ────────────────────
+function pointInPolygon(px, py, polygon) {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].m, yi = polygon[i].w;
+    const xj = polygon[j].m, yj = polygon[j].w;
+    const intersect = ((yi > py) !== (yj > py)) &&
+      (px < (xj - xi) * (py - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+// ─── CG Moment Envelope Graph ──────────────────────────────
+function drawGraph() {
+  const canvas = document.getElementById('cg-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  // Make canvas responsive — match container width
+  const container = canvas.parentElement;
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = container.clientWidth;
+  const cssH = Math.min(cssW * 0.85, 500);
+  canvas.width = cssW * dpr;
+  canvas.height = cssH * dpr;
+  canvas.style.width = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const W = cssW;
+  const H = cssH;
+  const padding = { top: 40, right: 30, bottom: 50, left: 65 };
+
+  // Chart area
+  const chartW = W - padding.left - padding.right;
+  const chartH = H - padding.top - padding.bottom;
+
+  // Data ranges
+  const momentMin = 550;
+  const momentMax = 1400;
+  const weightMin = 600;
+  const weightMax = 1150;
+
+  // Coordinate transforms
+  function toX(moment) { return padding.left + (moment - momentMin) / (momentMax - momentMin) * chartW; }
+  function toY(weight) { return padding.top + (1 - (weight - weightMin) / (weightMax - weightMin)) * chartH; }
+
+  // ── 1. Clear ──────────────────────────────────────────────
+  ctx.clearRect(0, 0, W, H);
+
+  // ── 2. Title ──────────────────────────────────────────────
+  ctx.fillStyle = '#333';
+  ctx.font = 'bold 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('CG Moment Envelope', W / 2, 22);
+
+  // ── 3. Grid lines & labels ────────────────────────────────
+  ctx.font = '11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+
+  // Y-axis grid (weight)
+  const weightSteps = [600, 700, 800, 900, 1000, 1100];
+  weightSteps.forEach(w => {
+    const y = toY(w);
+    // Grid line
+    ctx.beginPath();
+    ctx.strokeStyle = '#e8e8e8';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([]);
+    ctx.moveTo(padding.left, y);
+    ctx.lineTo(W - padding.right, y);
+    ctx.stroke();
+    // Label
+    ctx.fillStyle = '#666';
+    ctx.fillText(w.toString(), padding.left - 8, y);
+  });
+
+  // X-axis grid (moment)
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  const momentSteps = [600, 700, 800, 900, 1000, 1100, 1200, 1300];
+  momentSteps.forEach(m => {
+    const x = toX(m);
+    // Grid line
+    ctx.beginPath();
+    ctx.strokeStyle = '#e8e8e8';
+    ctx.lineWidth = 1;
+    ctx.moveTo(x, padding.top);
+    ctx.lineTo(x, H - padding.bottom);
+    ctx.stroke();
+    // Label
+    ctx.fillStyle = '#666';
+    ctx.fillText(m.toString(), x, H - padding.bottom + 6);
+  });
+
+  // Axes border
+  ctx.beginPath();
+  ctx.strokeStyle = '#aaa';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([]);
+  ctx.moveTo(padding.left, padding.top);
+  ctx.lineTo(padding.left, H - padding.bottom);
+  ctx.lineTo(W - padding.right, H - padding.bottom);
+  ctx.stroke();
+
+  // Axis labels
+  ctx.fillStyle = '#555';
+  ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillText('Moment (m\u00B7kg)', W / 2, H - 14);
+
+  // Y-axis label (rotated)
+  ctx.save();
+  ctx.translate(14, padding.top + chartH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('Weight (kg)', 0, 0);
+  ctx.restore();
+
+  // ── 4. Normal Category envelope (filled) ──────────────────
+  const normalPoly = [
+    { m: 680 * 0.89, w: 680 },
+    { m: 885 * 0.89, w: 885 },
+    { m: 1089 * 1.00, w: 1089 },
+    { m: 1089 * 1.20, w: 1089 },
+    { m: 885 * 1.20, w: 885 },
+    { m: 680 * 1.20, w: 680 },
+  ];
+
+  // Filled polygon
+  ctx.beginPath();
+  ctx.moveTo(toX(normalPoly[0].m), toY(normalPoly[0].w));
+  for (let i = 1; i < normalPoly.length; i++) {
+    ctx.lineTo(toX(normalPoly[i].m), toY(normalPoly[i].w));
+  }
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(232, 115, 26, 0.15)';
+  ctx.fill();
+  ctx.strokeStyle = '#E8731A';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([]);
+  ctx.stroke();
+
+  // Normal label
+  ctx.fillStyle = '#E8731A';
+  ctx.font = 'bold 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('Normal', toX(1089 * 1.10), toY(1089) - 6);
+
+  // ── 5. Utility Category envelope (dashed) ─────────────────
+  const utilityPoly = [
+    { m: 680 * 0.89, w: 680 },
+    { m: 885 * 0.89, w: 885 },
+    { m: 952 * 0.93, w: 952 },
+    { m: 952 * 1.03, w: 952 },
+    { m: 885 * 1.03, w: 885 },
+    { m: 680 * 1.03, w: 680 },
+  ];
+
+  ctx.beginPath();
+  ctx.moveTo(toX(utilityPoly[0].m), toY(utilityPoly[0].w));
+  for (let i = 1; i < utilityPoly.length; i++) {
+    ctx.lineTo(toX(utilityPoly[i].m), toY(utilityPoly[i].w));
+  }
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(232, 115, 26, 0.05)';
+  ctx.fill();
+  ctx.strokeStyle = '#C45F10';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([6, 4]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Utility label
+  ctx.fillStyle = '#C45F10';
+  ctx.font = '10px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('Utility', toX(952 * 0.96), toY(952) - 4);
+
+  // ── 6. Plot Takeoff and Landing points ─────────────────────
+  const { towWeight, towMoment, ldwWeight, ldwMoment } = graphData;
+
+  function drawPoint(moment, weight, defaultColor, label) {
+    if (weight <= 0) return;
+    const inNormal = pointInPolygon(moment, weight, normalPoly);
+    const color = inNormal ? defaultColor : '#C62828';
+    const x = toX(moment);
+    const y = toY(weight);
+
+    // Outer ring
+    ctx.beginPath();
+    ctx.arc(x, y, 7, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Inner dot
+    ctx.beginPath();
+    ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+
+    // Label
+    ctx.fillStyle = color;
+    ctx.font = 'bold 10px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, x + 11, y);
+  }
+
+  drawPoint(towMoment, towWeight, '#1565C0', 'TOW');
+  drawPoint(ldwMoment, ldwWeight, '#2E7D32', 'LDW');
+
+  // ── 7. Legend ──────────────────────────────────────────────
+  const legendX = W - padding.right - 120;
+  const legendY = padding.top + 10;
+
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.fillRect(legendX - 8, legendY - 6, 124, 68);
+  ctx.strokeStyle = '#ddd';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(legendX - 8, legendY - 6, 124, 68);
+
+  ctx.font = '10px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+
+  // TOW legend
+  ctx.beginPath();
+  ctx.arc(legendX + 6, legendY + 8, 4, 0, Math.PI * 2);
+  ctx.fillStyle = '#1565C0';
+  ctx.fill();
+  ctx.fillText('Takeoff Weight', legendX + 16, legendY + 8);
+
+  // LDW legend
+  ctx.beginPath();
+  ctx.arc(legendX + 6, legendY + 24, 4, 0, Math.PI * 2);
+  ctx.fillStyle = '#2E7D32';
+  ctx.fill();
+  ctx.fillText('Landing Weight', legendX + 16, legendY + 24);
+
+  // Outside legend
+  ctx.beginPath();
+  ctx.arc(legendX + 6, legendY + 40, 4, 0, Math.PI * 2);
+  ctx.fillStyle = '#C62828';
+  ctx.fill();
+  ctx.fillText('Outside Envelope', legendX + 16, legendY + 40);
+
+  // Normal envelope legend
+  ctx.fillStyle = 'rgba(232, 115, 26, 0.3)';
+  ctx.fillRect(legendX, legendY + 52, 12, 4);
+  ctx.strokeStyle = '#E8731A';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(legendX, legendY + 52, 12, 4);
+  ctx.fillStyle = '#555';
+  ctx.fillText('Normal / Utility', legendX + 16, legendY + 54);
+}
+
+// ─── Debounce helper ────────────────────────────────────────
+function debounce(fn, ms) {
+  let timer;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), ms);
+  };
 }
 
 // ─── Event Listeners ────────────────────────────────────────
@@ -188,6 +475,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('input', calculate);
   });
+
+  // Redraw graph on window resize (debounced)
+  window.addEventListener('resize', debounce(drawGraph, 150));
 
   // Initialize on load
   calculate();
