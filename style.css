@@ -1,0 +1,630 @@
+/* ============================================================
+   PH-GYS Weight & Balance Calculator
+   Stichting Vliegmaterieel Schiphol (SVS)
+   Brand: Orange (#E8731A) & White
+   ============================================================ */
+
+/* ---------- CSS Variables ---------- */
+:root {
+  --svs-orange: #E8731A;
+  --svs-orange-light: #FFF3EB;
+  --svs-orange-dark: #C45F10;
+  --text-dark: #333;
+  --bg-white: #fff;
+  --success: #2E7D32;
+  --error: #C62828;
+
+  --border-color: #ddd;
+  --border-radius: 4px;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.12);
+  --transition: 0.15s ease;
+}
+
+/* ---------- Reset & Base ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  color: var(--text-dark);
+  background: #f5f5f5;
+  line-height: 1.5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- Header ---------- */
+header {
+  background: var(--svs-orange);
+  color: #fff;
+  padding: 1rem 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  z-index: 10;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logo {
+  font-weight: 800;
+  font-size: 1.6rem;
+  letter-spacing: 0.05em;
+  background: #fff;
+  color: var(--svs-orange);
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--border-radius);
+  line-height: 1.2;
+  user-select: none;
+}
+
+header h1 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+#lang-toggle {
+  background: transparent;
+  color: #fff;
+  border: 1.5px solid rgba(255, 255, 255, 0.6);
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--border-radius);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+#lang-toggle:hover,
+#lang-toggle:focus-visible {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: #fff;
+}
+
+.disclaimer {
+  width: 100%;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  opacity: 0.85;
+  font-style: italic;
+}
+
+/* ---------- Main Layout ---------- */
+main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  max-width: 1280px;
+  width: 100%;
+  margin: 1.5rem auto;
+  padding: 0 1.5rem;
+  flex: 1;
+}
+
+/* ---------- Section common ---------- */
+.calculator,
+.envelope-graph {
+  background: var(--bg-white);
+  border-radius: 6px;
+  box-shadow: var(--shadow-sm);
+  padding: 1.25rem;
+}
+
+.calculator h2,
+.envelope-graph h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--svs-orange-dark);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--svs-orange-light);
+}
+
+/* ---------- Calculator Table ---------- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+thead th {
+  background: var(--svs-orange-light);
+  color: var(--text-dark);
+  font-weight: 700;
+  text-align: left;
+  padding: 0.6rem 0.5rem;
+  border-bottom: 2px solid var(--svs-orange);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+thead th:nth-child(n+2) {
+  text-align: right;
+}
+
+tbody td {
+  padding: 0.5rem 0.5rem;
+  border-bottom: 1px solid #eee;
+  vertical-align: middle;
+}
+
+tbody tr:hover {
+  background: #fafafa;
+}
+
+/* Right-align numeric columns (2, 3, 4) */
+tbody td:nth-child(2),
+tbody td:nth-child(3),
+tbody td:nth-child(4) {
+  text-align: right;
+}
+
+/* Spans within numeric columns */
+tbody td span {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Labels in first column */
+tbody td:first-child {
+  font-weight: 500;
+}
+
+tbody td label {
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* ---------- Subtotal Rows ---------- */
+tr.subtotal {
+  background: #f7f0ea;
+}
+
+tr.subtotal td {
+  font-weight: 700;
+  border-bottom: 2px solid var(--svs-orange-light);
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+}
+
+.limit-note {
+  font-weight: 400;
+  font-size: 0.8rem;
+  color: #777;
+}
+
+tr.subtotal-status td,
+tr.subtotal-extra td {
+  padding: 0.25rem 0.5rem;
+  border-bottom: 1px solid #eee;
+  background: #fdfaf8;
+}
+
+tr.subtotal-extra td {
+  font-size: 0.85rem;
+  color: #555;
+}
+
+/* ---------- Status Pills ---------- */
+.status {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+}
+
+.status.ok {
+  background: #e8f5e9;
+  color: var(--success);
+}
+
+.status.warn,
+.status.over {
+  background: #fce4ec;
+  color: var(--error);
+}
+
+/* ---------- Input Fields ---------- */
+input[type="number"] {
+  width: 6.5rem;
+  padding: 0.4rem 0.5rem;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--border-radius);
+  font-size: 0.9rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-family: inherit;
+  color: var(--text-dark);
+  transition: border-color var(--transition), box-shadow var(--transition);
+  -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"]:focus {
+  outline: none;
+  border-color: var(--svs-orange);
+  box-shadow: 0 0 0 2.5px rgba(232, 115, 26, 0.18);
+}
+
+input[type="number"].input-error {
+  border-color: var(--error);
+  box-shadow: 0 0 0 2.5px rgba(198, 40, 40, 0.15);
+}
+
+/* Fuel input group */
+.fuel-input {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.unit-label {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.converted-kg {
+  display: block;
+  font-size: 0.78rem;
+  color: #888;
+  text-align: right;
+  margin-top: 0.15rem;
+}
+
+/* ---------- Envelope Graph (right column) ---------- */
+.envelope-graph {
+  position: sticky;
+  top: 1rem;
+  align-self: start;
+}
+
+#cg-canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  border: 1px solid #eee;
+  border-radius: var(--border-radius);
+  background: var(--bg-white);
+}
+
+/* ---------- Footer ---------- */
+footer {
+  background: #f0f0f0;
+  border-top: 1px solid #ddd;
+  text-align: center;
+  padding: 1rem 1.5rem;
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem 1.5rem;
+}
+
+.footer-links {
+  display: flex;
+  gap: 1rem;
+}
+
+.footer-links a {
+  color: var(--svs-orange);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: color var(--transition);
+}
+
+.footer-links a:hover,
+.footer-links a:focus-visible {
+  color: var(--svs-orange-dark);
+  text-decoration: underline;
+}
+
+.footer-credit {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.footer-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* ---------- Buttons (Print & Reset) ---------- */
+#btn-print,
+#btn-reset {
+  background: var(--svs-orange);
+  color: #fff;
+  border: none;
+  padding: 0.45rem 1.1rem;
+  border-radius: var(--border-radius);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition), box-shadow var(--transition);
+}
+
+#btn-print:hover,
+#btn-print:focus-visible,
+#btn-reset:hover,
+#btn-reset:focus-visible {
+  background: var(--svs-orange-dark);
+  box-shadow: var(--shadow-sm);
+}
+
+#btn-reset {
+  background: transparent;
+  color: var(--svs-orange);
+  border: 1.5px solid var(--svs-orange);
+}
+
+#btn-reset:hover,
+#btn-reset:focus-visible {
+  background: var(--svs-orange-light);
+  color: var(--svs-orange-dark);
+  border-color: var(--svs-orange-dark);
+}
+
+/* ---------- Print-Only Section (hidden on screen) ---------- */
+.print-only {
+  display: none;
+}
+
+/* ============================================================
+   RESPONSIVE: Mobile (max-width: 768px)
+   ============================================================ */
+@media (max-width: 768px) {
+  main {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 0 0.75rem;
+    margin: 1rem auto;
+  }
+
+  header {
+    padding: 0.75rem 1rem;
+  }
+
+  header h1 {
+    font-size: 0.95rem;
+  }
+
+  .logo {
+    font-size: 1.3rem;
+  }
+
+  .calculator,
+  .envelope-graph {
+    padding: 0.75rem;
+  }
+
+  .envelope-graph {
+    position: static;
+  }
+
+  table {
+    font-size: 0.82rem;
+  }
+
+  thead th,
+  tbody td {
+    padding: 0.4rem 0.3rem;
+  }
+
+  input[type="number"] {
+    width: 5.5rem;
+    font-size: 0.85rem;
+  }
+
+  footer {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+/* ============================================================
+   PRINT STYLES
+   ============================================================ */
+@media print {
+  @page {
+    margin: 10mm;
+    size: A4 portrait;
+  }
+
+  /* Reset colors and backgrounds */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+    font-size: 10px;
+    line-height: 1.35;
+  }
+
+  /* Hide non-printable elements */
+  #lang-toggle,
+  #btn-print,
+  #btn-reset,
+  .footer-links,
+  .footer-actions {
+    display: none !important;
+  }
+
+  /* Header: keep branding but simplify */
+  header {
+    background: var(--svs-orange) !important;
+    color: #fff !important;
+    padding: 6mm 8mm;
+    box-shadow: none;
+    page-break-after: avoid;
+  }
+
+  header h1 {
+    font-size: 12px;
+  }
+
+  .disclaimer {
+    font-size: 8px;
+  }
+
+  /* Layout: single column for print */
+  main {
+    display: block;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+
+  .calculator,
+  .envelope-graph {
+    box-shadow: none;
+    border-radius: 0;
+    padding: 2mm 0;
+    background: none;
+    page-break-inside: avoid;
+  }
+
+  .calculator h2,
+  .envelope-graph h2 {
+    font-size: 11px;
+    margin-bottom: 2mm;
+    padding-bottom: 1mm;
+  }
+
+  /* Table: compact for print */
+  table {
+    font-size: 9px;
+    border: 1px solid #999;
+  }
+
+  thead th {
+    background: #eee !important;
+    color: #000;
+    padding: 1.5mm 2mm;
+    font-size: 8px;
+    border-bottom: 1.5px solid #333;
+  }
+
+  tbody td {
+    padding: 1.5mm 2mm;
+    border-bottom: 0.5px solid #ccc;
+  }
+
+  tr.subtotal td {
+    border-bottom: 1.5px solid #999;
+    background: #f2f2f2 !important;
+  }
+
+  /* Input fields: display as plain text for print */
+  input[type="number"] {
+    border: none;
+    background: none;
+    padding: 0;
+    font-size: 9px;
+    width: auto;
+    box-shadow: none;
+    -moz-appearance: textfield;
+  }
+
+  /* Canvas: constrain height */
+  #cg-canvas {
+    max-height: 40vh;
+    width: 100%;
+    border: 1px solid #ccc;
+  }
+
+  /* Footer: minimal */
+  footer {
+    background: none;
+    border-top: 0.5px solid #ccc;
+    padding: 2mm 0;
+    font-size: 8px;
+    page-break-before: avoid;
+  }
+
+  .footer-credit {
+    font-size: 8px;
+    color: #555;
+  }
+
+  /* Show PIC signature block */
+  .print-only {
+    display: block !important;
+    margin-top: 6mm;
+    page-break-inside: avoid;
+  }
+
+  .pic-signature {
+    border: 1.5px solid #333;
+    padding: 4mm 5mm;
+  }
+
+  .pic-signature h3 {
+    font-size: 10px;
+    margin-bottom: 3mm;
+    color: #000;
+  }
+
+  .signature-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9px;
+    border: none;
+  }
+
+  .signature-table td {
+    padding: 2mm 2mm;
+    border: none;
+    vertical-align: bottom;
+  }
+
+  .signature-line {
+    border-bottom: 1px solid #333 !important;
+    min-width: 50mm;
+  }
+
+  .pic-disclaimer {
+    margin-top: 3mm;
+    font-size: 8px;
+    font-style: italic;
+    color: #555;
+  }
+}
