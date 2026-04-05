@@ -594,7 +594,7 @@ function drawGraph() {
 
   // ── 7. Legend ──────────────────────────────────────────────
   const legendX = W - padding.right - 130;
-  const legendY = padding.top + 10;
+  const legendY = H - padding.bottom - 60;
 
   ctx.fillStyle = 'rgba(255,255,255,0.9)';
   ctx.fillRect(legendX - 8, legendY - 6, 134, 52);
