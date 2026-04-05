@@ -265,7 +265,8 @@ function calculate() {
   setText('moment-fuel',  fuelL   ? momentFuel.toFixed(2)  : '—');
 
   // Fuel kg conversion display
-  setText('weight-fuel', fuelL ? fuelKg.toFixed(1) + ' kg' : '— kg');
+  const fuelUSG = fuelL / 3.78541;
+  setText('weight-fuel', fuelL ? fuelKg.toFixed(1) + ' kg / ' + fuelUSG.toFixed(1) + ' USG' : '— kg');
 
   // ZFW subtotal
   setText('total-zfw',  hasInput ? zfwWeight.toFixed(1) : '—');
