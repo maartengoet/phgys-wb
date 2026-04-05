@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Weight & Balance Calculator for PH-GYS (Reims/Cessna F172N) - Stichting Vliegmaterieel Schiphol">
   <meta name="theme-color" content="#E8731A">
+  <link rel="icon" href="favicon.ico">
   <title>PH-GYS Weight &amp; Balance</title>
   <link rel="stylesheet" href="style.css">
   <script src="app.js" defer></script>
@@ -68,7 +69,7 @@
           <!-- Row 4: Baggage Area 1 -->
           <tr>
             <td><label for="input-bag1" data-i18n="baggage1">Bagageruimte 1 (max 54 kg)</label></td>
-            <td><input type="number" id="input-bag1" min="0" step="0.1" placeholder="0"></td>
+            <td><input type="number" id="input-bag1" min="0" max="54" step="0.1" placeholder="0"></td>
             <td><span id="arm-bag1">2.41</span></td>
             <td><span id="moment-bag1">—</span></td>
           </tr>
@@ -76,7 +77,7 @@
           <!-- Row 5: Baggage Area 2 -->
           <tr>
             <td><label for="input-bag2" data-i18n="baggage2">Bagageruimte 2 (max 23 kg)</label></td>
-            <td><input type="number" id="input-bag2" min="0" step="0.1" placeholder="0"></td>
+            <td><input type="number" id="input-bag2" min="0" max="23" step="0.1" placeholder="0"></td>
             <td><span id="arm-bag2">3.12</span></td>
             <td><span id="moment-bag2">—</span></td>
           </tr>
@@ -99,7 +100,7 @@
             </td>
             <td>
               <div class="fuel-input">
-                <input type="number" id="input-fuel" min="0" step="0.1" placeholder="0">
+                <input type="number" id="input-fuel" min="0" max="190" step="0.1" placeholder="0">
                 <span class="unit-label" data-i18n="liters">liter</span>
               </div>
               <span id="weight-fuel" class="converted-kg">— kg</span>

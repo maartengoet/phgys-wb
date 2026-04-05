@@ -210,7 +210,7 @@ function readInput(id) {
   const el = document.getElementById(id);
   if (!el) return 0;
   const v = parseFloat(el.value);
-  return isNaN(v) ? 0 : v;
+  return isNaN(v) ? 0 : Math.max(0, v);
 }
 
 // ─── Helper: set text content of an element ─────────────────
@@ -268,6 +268,9 @@ function calculate() {
   const cgTow = towWeight > 0 ? towMoment / towWeight : 0;
   const cgLdw = ldwWeight > 0 ? ldwMoment / ldwWeight : 0;
 
+  // Detect whether any user input was provided (not just empty weight)
+  const hasInput = (pilotKg + rearKg + bag1Kg + bag2Kg + fuelL + taxiL + tripL) > 0;
+
   // 5. Update the DOM — individual row moments
   setText('moment-empty', momentEmpty.toFixed(2));
   setText('moment-pilot', pilotKg ? momentPilot.toFixed(2) : '—');
@@ -284,39 +287,39 @@ function calculate() {
   setText('weight-trip', tripL ? tripKg.toFixed(1) + ' kg' : '— kg');
 
   // ZFW subtotal
-  setText('total-zfw',  zfwWeight.toFixed(1));
-  setText('arm-zfw',    zfwArm.toFixed(2));
-  setText('moment-zfw', zfwMoment.toFixed(2));
+  setText('total-zfw',  hasInput ? zfwWeight.toFixed(1) : '—');
+  setText('arm-zfw',    hasInput ? zfwArm.toFixed(2) : '—');
+  setText('moment-zfw', hasInput ? zfwMoment.toFixed(2) : '—');
 
   // Ramp subtotal
-  setText('total-ramp',  rampWeight.toFixed(1));
-  setText('arm-ramp',    rampArm.toFixed(2));
-  setText('moment-ramp', rampMoment.toFixed(2));
+  setText('total-ramp',  hasInput ? rampWeight.toFixed(1) : '—');
+  setText('arm-ramp',    hasInput ? rampArm.toFixed(2) : '—');
+  setText('moment-ramp', hasInput ? rampMoment.toFixed(2) : '—');
 
   // TOW subtotal
-  setText('total-tow',  towWeight.toFixed(1));
-  setText('arm-tow',    towArm.toFixed(2));
-  setText('moment-tow', towMoment.toFixed(2));
-  setText('cg-tow',     cgTow.toFixed(2));
+  setText('total-tow',  hasInput ? towWeight.toFixed(1) : '—');
+  setText('arm-tow',    hasInput ? towArm.toFixed(2) : '—');
+  setText('moment-tow', hasInput ? towMoment.toFixed(2) : '—');
+  setText('cg-tow',     hasInput ? cgTow.toFixed(2) : '—');
 
   // LDW subtotal
-  setText('total-ldw',  ldwWeight.toFixed(1));
-  setText('arm-ldw',    ldwArm.toFixed(2));
-  setText('moment-ldw', ldwMoment.toFixed(2));
-  setText('cg-ldw',     cgLdw.toFixed(2));
+  setText('total-ldw',  hasInput ? ldwWeight.toFixed(1) : '—');
+  setText('arm-ldw',    hasInput ? ldwArm.toFixed(2) : '—');
+  setText('moment-ldw', hasInput ? ldwMoment.toFixed(2) : '—');
+  setText('cg-ldw',     hasInput ? cgLdw.toFixed(2) : '—');
 
   // Validation & warnings (Task 5)
   updateWarnings({
     bag1Kg, bag2Kg, fuelL, taxiL, tripL,
     rampWeight, towWeight, ldwWeight,
-    cgTow, cgLdw,
+    cgTow, cgLdw, hasInput,
   });
 
   // Update graph data and redraw CG Moment Envelope
-  graphData.towWeight = towWeight;
-  graphData.towMoment = towMoment;
-  graphData.ldwWeight = ldwWeight;
-  graphData.ldwMoment = ldwMoment;
+  graphData.towWeight = hasInput ? towWeight : 0;
+  graphData.towMoment = hasInput ? towMoment : 0;
+  graphData.ldwWeight = hasInput ? ldwWeight : 0;
+  graphData.ldwMoment = hasInput ? ldwMoment : 0;
   drawGraph();
 }
 
@@ -352,7 +355,7 @@ function setStatus(id, ok, message) {
  */
 function updateWarnings({ bag1Kg, bag2Kg, fuelL, taxiL, tripL,
                           rampWeight, towWeight, ldwWeight,
-                          cgTow, cgLdw }) {
+                          cgTow, cgLdw, hasInput }) {
   const S = AIRCRAFT.stations;
 
   // ── Input-level checks ────────────────────────────────────
@@ -378,8 +381,10 @@ function updateWarnings({ bag1Kg, bag2Kg, fuelL, taxiL, tripL,
   if (combBagOver && !bag1Over && !bag2Over) zfwIssues.push(t.bagTotalOver);
   if (zfwIssues.length > 0) {
     setStatus('status-zfw', false, zfwIssues[0]);
-  } else {
+  } else if (hasInput) {
     setStatus('status-zfw', true, t.ok);
+  } else {
+    setStatus('status-zfw', true, '');
   }
 
   // ── Ramp Weight status ────────────────────────────────────
@@ -388,8 +393,10 @@ function updateWarnings({ bag1Kg, bag2Kg, fuelL, taxiL, tripL,
     setStatus('status-ramp', false, t.fuelOver);
   } else if (rampOver) {
     setStatus('status-ramp', false, t.overMax);
-  } else {
+  } else if (hasInput) {
     setStatus('status-ramp', true, t.ok);
+  } else {
+    setStatus('status-ramp', true, '');
   }
 
   // ── Takeoff Weight status ─────────────────────────────────
@@ -406,7 +413,7 @@ function updateWarnings({ bag1Kg, bag2Kg, fuelL, taxiL, tripL,
     setStatus('status-tow', false, t.cgFwd);
   } else if (towCgAft) {
     setStatus('status-tow', false, t.cgAft);
-  } else if (towWeight > 0) {
+  } else if (hasInput) {
     setStatus('status-tow', true, t.ok);
   } else {
     setStatus('status-tow', true, '');
@@ -423,7 +430,7 @@ function updateWarnings({ bag1Kg, bag2Kg, fuelL, taxiL, tripL,
     setStatus('status-ldw', false, t.cgFwd);
   } else if (ldwCgAft) {
     setStatus('status-ldw', false, t.cgAft);
-  } else if (ldwWeight > 0) {
+  } else if (hasInput) {
     setStatus('status-ldw', true, t.ok);
   } else {
     setStatus('status-ldw', true, '');
