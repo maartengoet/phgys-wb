@@ -729,9 +729,53 @@ document.addEventListener('DOMContentLoaded', () => {
     setLanguage(currentLang === 'nl' ? 'en' : 'nl');
   });
 
+  // Print button
+  document.getElementById('btn-print').addEventListener('click', printPage);
+
+  // Reset button
+  document.getElementById('btn-reset').addEventListener('click', resetForm);
+
   // Redraw graph on window resize (debounced)
   window.addEventListener('resize', debounce(drawGraph, 150));
 
   // Initialize on load — apply saved or default language
   setLanguage(currentLang);
 });
+
+// ─── Print Page ─────────────────────────────────────────────
+function printPage() {
+  // Auto-fill date (DD-MM-YYYY local) and time (HH:MM UTC)
+  const now = new Date();
+  const dd = String(now.getDate()).padStart(2, '0');
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const yyyy = now.getFullYear();
+  setText('print-date', `${dd}-${mm}-${yyyy}`);
+
+  const utcH = String(now.getUTCHours()).padStart(2, '0');
+  const utcM = String(now.getUTCMinutes()).padStart(2, '0');
+  setText('print-time', `${utcH}:${utcM} UTC`);
+
+  // Convert canvas to image for reliable print rendering
+  const canvas = document.getElementById('cg-canvas');
+  const printImg = document.getElementById('cg-canvas-print');
+  if (canvas && printImg) {
+    printImg.src = canvas.toDataURL('image/png');
+    printImg.removeAttribute('hidden');
+  }
+
+  window.print();
+}
+
+// ─── Reset Form ─────────────────────────────────────────────
+function resetForm() {
+  const inputIds = [
+    'input-pilot', 'input-rear',
+    'input-bag1',  'input-bag2',
+    'input-fuel',  'input-taxi', 'input-trip',
+  ];
+  inputIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  calculate();
+}
