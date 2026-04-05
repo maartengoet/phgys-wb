@@ -134,6 +134,8 @@ main {
   border-radius: 6px;
   box-shadow: var(--shadow-sm);
   padding: 1.25rem;
+  overflow: hidden;
+  min-width: 0;
 }
 
 .calculator h2,
@@ -315,6 +317,7 @@ input[type="number"].input-error {
 
 #cg-canvas {
   width: 100%;
+  max-width: 100%;
   height: auto;
   display: block;
   border: 1px solid #eee;

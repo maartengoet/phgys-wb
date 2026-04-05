@@ -109,37 +109,7 @@
             <td><span id="moment-fuel">—</span></td>
           </tr>
 
-          <!-- Row 8: Ramp Weight (subtotal) -->
-          <tr class="subtotal">
-            <td>
-              <span data-i18n="rampWeight">Platformgewicht</span>
-              <span class="limit-note">(max 1092 kg)</span>
-            </td>
-            <td><span id="total-ramp">—</span></td>
-            <td><span id="arm-ramp">—</span></td>
-            <td><span id="moment-ramp">—</span></td>
-          </tr>
-          <tr class="subtotal-status">
-            <td colspan="4"><span id="status-ramp" class="status"></span></td>
-          </tr>
-
-          <!-- Row 9: Taxi Fuel (subtracted) -->
-          <tr>
-            <td>
-              <label for="input-taxi" data-i18n="taxiFuel">Taxibrandstof</label>
-            </td>
-            <td>
-              <div class="fuel-input">
-                <input type="number" id="input-taxi" min="0" step="0.1" placeholder="0">
-                <span class="unit-label" data-i18n="liters">liter</span>
-              </div>
-              <span id="weight-taxi" class="converted-kg">— kg</span>
-            </td>
-            <td><span id="arm-taxi">1.22</span></td>
-            <td><span id="moment-taxi">—</span></td>
-          </tr>
-
-          <!-- Row 10: Takeoff Weight (subtotal) -->
+          <!-- Row 8: Takeoff Weight (subtotal) -->
           <tr class="subtotal">
             <td>
               <span data-i18n="takeoffWeight">Startgewicht</span>
@@ -154,36 +124,6 @@
               <span data-i18n="cgLabel">ZP</span>: <span id="cg-tow">—</span> m
             </td>
             <td colspan="2"><span id="status-tow" class="status"></span></td>
-          </tr>
-
-          <!-- Row 11: Trip Fuel (subtracted) -->
-          <tr>
-            <td>
-              <label for="input-trip" data-i18n="tripFuel">Reisbrandstof</label>
-            </td>
-            <td>
-              <div class="fuel-input">
-                <input type="number" id="input-trip" min="0" step="0.1" placeholder="0">
-                <span class="unit-label" data-i18n="liters">liter</span>
-              </div>
-              <span id="weight-trip" class="converted-kg">— kg</span>
-            </td>
-            <td><span id="arm-trip">1.22</span></td>
-            <td><span id="moment-trip">—</span></td>
-          </tr>
-
-          <!-- Row 12: Landing Weight (subtotal) -->
-          <tr class="subtotal">
-            <td data-i18n="landingWeight">Landingsgewicht</td>
-            <td><span id="total-ldw">—</span></td>
-            <td><span id="arm-ldw">—</span></td>
-            <td><span id="moment-ldw">—</span></td>
-          </tr>
-          <tr class="subtotal-extra">
-            <td colspan="2">
-              <span data-i18n="cgLabel">ZP</span>: <span id="cg-ldw">—</span> m
-            </td>
-            <td colspan="2"><span id="status-ldw" class="status"></span></td>
           </tr>
 
         </tbody>
