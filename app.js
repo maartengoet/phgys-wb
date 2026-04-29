@@ -62,6 +62,7 @@ const TRANSLATIONS = {
     tripOver: 'REIS > BRANDSTOF',
     maxRamp: 'max 1092 kg',
     maxTow: 'max 1089 kg',
+    runwayLink: 'Runway performance check (EHHV) →',
   },
   en: {
     title: 'Weight & Balance',
@@ -118,6 +119,7 @@ const TRANSLATIONS = {
     tripOver: 'TRIP > FUEL',
     maxRamp: 'max 1092 kg',
     maxTow: 'max 1089 kg',
+    runwayLink: 'Runway performance check (EHHV) →',
   },
 };
 
@@ -278,6 +280,14 @@ function calculate() {
   setText('arm-tow',    hasInput ? towArm.toFixed(2) : '—');
   setText('moment-tow', hasInput ? towMoment.toFixed(2) : '—');
   setText('cg-tow',     hasInput ? cgTow.toFixed(2) : '—');
+
+  // Bridge to takeoff distance page (sessionStorage so it's only available
+  // within this browser session)
+  if (hasInput) {
+    sessionStorage.setItem('phgys-tow', towWeight.toFixed(1));
+  } else {
+    sessionStorage.removeItem('phgys-tow');
+  }
 
   // Validation & warnings
   updateWarnings({

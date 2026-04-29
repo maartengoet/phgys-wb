@@ -1022,3 +1022,25 @@ body.poh-tables-page {
     margin: 1.2cm;
   }
 }
+
+/* W&B → Takeoff bridge link */
+.runway-link {
+  text-align: center;
+  margin: 1.5rem 0 0.5rem 0;
+}
+.runway-link a {
+  display: inline-block;
+  color: var(--svs-orange-dark);
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 1.05rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--svs-orange);
+  border-radius: var(--border-radius);
+  background: var(--svs-orange-light);
+  transition: background var(--transition);
+}
+.runway-link a:hover {
+  background: #fde6d0;
+  text-decoration: none;
+}
