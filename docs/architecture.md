@@ -17,16 +17,28 @@ graph LR
 
 ```
 phgys-wb/
-├── index.html              # Single HTML page (calculator + graph + PIC block)
+├── index.html              # W&B calculator (graph + PIC block)
+├── takeoff.html            # Takeoff distance calculator for EHHV
+├── takeoff-tables.html     # Printable POH reference tables
 ├── style.css               # SVS-branded stylesheet (responsive + print)
-├── app.js                  # All logic: calculations, graph, i18n, validation
+├── app.js                  # W&B logic: calculations, graph, i18n, validation
+├── takeoff.js              # Takeoff page DOM controller (ES module)
+├── takeoff-calc.js         # Pure calc functions (PA, wind, lookup, corrections)
+├── takeoff-data.js         # POH tables (862/953/1043 kg) + EHHV runways
+├── takeoff-tables.js       # Renders POH tables on the reference page
+├── takeoff-calc.test.js    # node --test suite for calc functions
+├── takeoff-data.test.js    # node --test suite for POH data integrity
+├── package.json            # { "type": "module" } — enables ESM in node --test
 ├── .github/
 │   └── workflows/
 │       └── deploy.yml      # Auto-deploy to Cloudflare Pages on push
 └── docs/
-    ├── architecture.md     # This file
-    ├── aircraft-data.md    # PH-GYS specific W&B data and sources
-    └── plans/              # Original design and implementation plans
+    ├── architecture.md                      # This file
+    ├── aircraft-data.md                     # PH-GYS W&B data and sources
+    ├── deployment.md                        # CI/CD setup
+    ├── soft_field_takeoff_distance.csv      # Source CSV for POH tables
+    ├── EHHV/                                # AIP charts and procedures
+    └── plans/                               # Design and implementation plans
 ```
 
 ## Technology Stack
@@ -89,3 +101,38 @@ A `TRANSLATIONS` object holds all NL/EN strings. `setLanguage()` updates all ele
 ### Validation
 
 Checks weight limits (MTOW, baggage), fuel limits, and CG envelope bounds. Displays green "OK" or red warning pills. Input fields get a red border when exceeding their limit.
+
+## Takeoff Distance Calculator
+
+The `/takeoff.html` page is a separate companion to W&B. It uses ES modules:
+
+- `takeoff-calc.js` — pure functions (PA, wind components, POH bilinear lookup, surface/wind corrections, runway flag, input validation). No DOM, no globals — fully unit-tested under `node --test`.
+- `takeoff-data.js` — static POH tables (3 weights × 9 PA × 5 OAT) and EHHV runway constants (true bearing, TORA, TODA per AIP EHHV AD 2.13).
+- `takeoff.js` — DOM controller. Reads inputs, calls the calc functions, renders runway cards with mini compass charts, manages the click-to-enlarge modal.
+
+### Calculation flow
+
+```mermaid
+flowchart TD
+    A[User inputs] --> B[pressureAltitude\nPA = 3 + 27 × 1013-QNH]
+    B --> C[lookupTakeoffDistance\nbilinear PA × OAT,\nlinear over weight]
+    A --> D[windComponents per runway\nhead/cross/tail incl. gust]
+    C --> E[applyCorrections\nsurface 15/25%, wind ±10%]
+    D --> E
+    E --> F[runwayFlag\ngreen/orange/red\nvs TORA/TODA × 1.25]
+    E --> G[validateInputs\nTOW>1043, tailwind>10, ...]
+    F --> H[Render card]
+    G --> H
+```
+
+### Bridge from W&B
+
+When `calculate()` runs on `/`, it writes the computed TOW (and the W&B input values) to `sessionStorage`. The takeoff page reads `phgys-tow` on load and pre-fills the TOW field. Returning to the W&B page restores the saved inputs so a round-trip preserves your entries.
+
+### Tests
+
+`takeoff-calc.test.js` and `takeoff-data.test.js` run under `node --test` (built-in, requires Node ≥ 18, no npm install). The data tests catch transcription errors via shape, corner-cell, and monotonicity assertions across PA, OAT, and weight.
+
+```bash
+node --test     # 33 tests as of last commit
+```
