@@ -870,3 +870,155 @@ footer {
     margin: 1.5cm;
   }
 }
+
+/* ============================================================
+   POH TABLES PAGE
+   ============================================================ */
+
+body.poh-tables-page {
+  background: #fff;
+}
+
+.poh-tables-header {
+  background: var(--svs-orange);
+  color: #fff;
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.poh-tables-header .header-right {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.poh-tables-header .back-link {
+  color: #fff;
+  text-decoration: none;
+  background: rgba(255,255,255,0.18);
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--border-radius);
+  font-weight: 600;
+}
+.poh-tables-header .back-link:hover { background: rgba(255,255,255,0.32); }
+
+.poh-tables-main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.poh-meta p {
+  font-size: 0.92rem;
+  margin: 0.2rem 0;
+  color: #444;
+}
+.poh-meta p strong { color: var(--svs-orange-dark); }
+
+.poh-table-block h2 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.1rem;
+  color: var(--svs-orange-dark);
+  border-bottom: 2px solid var(--svs-orange);
+  padding-bottom: 0.2rem;
+}
+.poh-table-block .speeds {
+  font-size: 0.85rem;
+  color: #666;
+  margin: 0 0 0.5rem 0;
+  font-style: italic;
+}
+
+.poh-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+.poh-table th, .poh-table td {
+  border: 1px solid #ccc;
+  padding: 0.3rem 0.4rem;
+  text-align: center;
+}
+.poh-table thead th {
+  background: var(--svs-orange-light);
+  color: var(--svs-orange-dark);
+  font-weight: 600;
+}
+.poh-table thead th.sub {
+  background: #fdebd9;
+  font-weight: 500;
+  font-size: 0.78rem;
+  color: #7a4915;
+}
+.poh-table tbody th {
+  background: #fafafa;
+  font-weight: 600;
+  text-align: left;
+  padding-left: 0.6rem;
+}
+.poh-table tbody tr:nth-child(even) td { background: #fafafa; }
+
+.poh-corrections {
+  background: var(--svs-orange-light);
+  border-left: 4px solid var(--svs-orange);
+  padding: 0.8rem 1rem;
+  border-radius: var(--border-radius);
+}
+.poh-corrections h2 {
+  margin: 0 0 0.4rem 0;
+  font-size: 1rem;
+  color: var(--svs-orange-dark);
+}
+.poh-corrections ol {
+  margin: 0;
+  padding-left: 1.2rem;
+  font-size: 0.9rem;
+}
+.poh-corrections li { margin: 0.2rem 0; }
+
+.poh-pic-disclaimer {
+  border: 1px solid var(--error);
+  background: #fde2e1;
+  padding: 0.8rem 1rem;
+  border-radius: var(--border-radius);
+  font-size: 0.9rem;
+  color: #6b1a17;
+}
+
+/* Print styles for POH tables page */
+@media print {
+  .no-print { display: none !important; }
+  body.poh-tables-page {
+    background: #fff;
+    color: #000;
+  }
+  .poh-tables-header {
+    background: #fff !important;
+    color: #000 !important;
+    border-bottom: 2px solid var(--svs-orange);
+    padding: 0.5cm 0;
+  }
+  .poh-tables-header .logo {
+    background: var(--svs-orange);
+    color: #fff;
+  }
+  .poh-tables-header h1 { color: #000; }
+  .poh-tables-main {
+    padding: 0;
+    gap: 0.6cm;
+  }
+  .poh-table-block { break-inside: avoid; page-break-inside: avoid; }
+  .poh-corrections, .poh-pic-disclaimer { break-inside: avoid; }
+  .poh-table { font-size: 0.78rem; }
+  .poh-table th, .poh-table td { padding: 0.15rem 0.25rem; }
+  @page {
+    size: A4;
+    margin: 1.2cm;
+  }
+}
