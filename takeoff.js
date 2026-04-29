@@ -13,6 +13,101 @@ const ISA_LAPSE_C_PER_FT = 0.00198; // 1.98°C per 1000 ft
 
 const $ = (id) => document.getElementById(id);
 
+// ─── i18n ────────────────────────────────────────────────
+
+const TRANSLATIONS = {
+  nl: {
+    title: 'PH-GYS Takeoff Distance — EHHV',
+    backLink: '← Weight & Balance',
+    langToggle: 'EN',
+    disclaimer: '<strong>De pilot-in-command (PIC) blijft te allen tijde verantwoordelijk</strong> voor de go/no-go beslissing. Berekening is slechts hulpmiddel; verifieer tegen actuele POH en omstandigheden.',
+    inputHeader: 'Invoer',
+    lblTow: 'TOW (kg)',
+    lblOat: 'OAT (°C)',
+    lblQnh: 'QNH (hPa)',
+    lblWindDir: 'Wind richting (°)',
+    lblWindSpeed: 'Wind (kt)',
+    lblWindGust: 'Gust (kt)',
+    lblSurface: 'Oppervlak',
+    dryGrass: 'Droog gras (+15%)',
+    wetGrass: 'Nat gras (+25%)',
+    lblRwy: 'Actieve baan/banen',
+    printBtn: 'Print / Save as PDF',
+    pohLink: '📄 POH-tabellen',
+    footer: 'Berekening op basis van Cessna F172N AFM Section 5 (Edition 1, Aug 1976). Declared distances per <a href="https://www.lvnl.nl/en/eaip" target="_blank" rel="noopener">AIP EHHV AD 2.13</a>. Slechts hulpmiddel voor planning.',
+    fillInputs: 'Vul TOW, OAT en QNH in.',
+    selectRunway: 'Selecteer ten minste één baan.',
+    cardRequired: 'Required',
+    cardAvailable: 'Available',
+    cardMargin: 'Margin',
+    cardGroundRoll: 'Ground roll',
+    cardOverObstacle: 'Over 15m obstacle',
+    cardSurfaceDry: 'Oppervlak: droog gras (+15% GR)',
+    cardSurfaceWet: 'Oppervlak: nat gras (+25% GR)',
+    windHead: 'Head',
+    windTail: 'Tail',
+    windCross: 'Cross',
+    windCalm: 'Calm',
+  },
+  en: {
+    title: 'PH-GYS Takeoff Distance — EHHV',
+    backLink: '← Weight & Balance',
+    langToggle: 'NL',
+    disclaimer: '<strong>The pilot-in-command (PIC) remains responsible at all times</strong> for the go/no-go decision. This calculation is an aid only; verify against the current POH and conditions.',
+    inputHeader: 'Inputs',
+    lblTow: 'TOW (kg)',
+    lblOat: 'OAT (°C)',
+    lblQnh: 'QNH (hPa)',
+    lblWindDir: 'Wind direction (°)',
+    lblWindSpeed: 'Wind (kt)',
+    lblWindGust: 'Gust (kt)',
+    lblSurface: 'Surface',
+    dryGrass: 'Dry grass (+15%)',
+    wetGrass: 'Wet grass (+25%)',
+    lblRwy: 'Active runway(s)',
+    printBtn: 'Print / Save as PDF',
+    pohLink: '📄 POH tables',
+    footer: 'Based on Cessna F172N AFM Section 5 (Edition 1, Aug 1976). Declared distances per <a href="https://www.lvnl.nl/en/eaip" target="_blank" rel="noopener">AIP EHHV AD 2.13</a>. Planning aid only.',
+    fillInputs: 'Enter TOW, OAT and QNH.',
+    selectRunway: 'Select at least one runway.',
+    cardRequired: 'Required',
+    cardAvailable: 'Available',
+    cardMargin: 'Margin',
+    cardGroundRoll: 'Ground roll',
+    cardOverObstacle: 'Over 15m obstacle',
+    cardSurfaceDry: 'Surface: dry grass (+15% GR)',
+    cardSurfaceWet: 'Surface: wet grass (+25% GR)',
+    windHead: 'Head',
+    windTail: 'Tail',
+    windCross: 'Cross',
+    windCalm: 'Calm',
+  },
+};
+
+let currentLang = localStorage.getItem('lang') || 'nl';
+
+function t(key) {
+  return TRANSLATIONS[currentLang][key] ?? TRANSLATIONS.nl[key] ?? key;
+}
+
+function setLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem('lang', lang);
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    const key = el.dataset.i18n;
+    const value = TRANSLATIONS[lang][key];
+    if (value !== undefined) {
+      // disclaimer/footer contain HTML markup, the rest is plain text
+      if (key === 'disclaimer' || key === 'footer') el.innerHTML = value;
+      else el.textContent = value;
+    }
+  });
+  render();
+}
+
+// ─── Render ──────────────────────────────────────────────
+
 function render() {
   const tow = parseFloat($('in-tow').value);
   const oat = parseFloat($('in-oat').value);
@@ -28,7 +123,6 @@ function render() {
   const inputsValid = Number.isFinite(tow) && Number.isFinite(oat) && Number.isFinite(qnh);
   const pa = inputsValid ? pressureAltitude(EHHV_ELEVATION_FT, qnh) : null;
 
-  // Derived line
   if (pa !== null) {
     const isaAtPa = ISA_TEMP_AT_SL - pa * ISA_LAPSE_C_PER_FT;
     const isaDev = oat - isaAtPa;
@@ -44,22 +138,20 @@ function render() {
   cardsEl.innerHTML = '';
 
   if (!inputsValid) {
-    appendWarning(warningsEl, 'info', 'Vul TOW, OAT en QNH in.');
+    appendWarning(warningsEl, 'info', t('fillInputs'));
     return;
   }
   if (selectedRunways.length === 0) {
-    appendWarning(warningsEl, 'info', 'Selecteer ten minste één baan.');
+    appendWarning(warningsEl, 'info', t('selectRunway'));
     return;
   }
 
-  // De-duplicate per-runway warnings: keep one entry per (code, runway).
   const seenWarnings = new Set();
 
   for (const rwyId of selectedRunways) {
     const rwy = EHHV_RUNWAYS.find((r) => r.id === rwyId);
     if (!rwy) continue;
 
-    // Wind: lower of (steady, gust) for headwind benefit; higher for tailwind/crosswind risk
     const lowerSpeed = windGust === null ? windSpeed : Math.min(windSpeed, windGust);
     const upperSpeed = windGust === null ? windSpeed : Math.max(windSpeed, windGust);
 
@@ -71,7 +163,6 @@ function render() {
     if (lowerComp.headwind > 0) {
       headwind = lowerComp.headwind;
     } else {
-      // No headwind benefit even at the lower wind → use upper as worst-case tailwind
       tailwind = -upperComp.headwind;
     }
     const crosswindLimit = upperComp.crosswind;
@@ -108,28 +199,26 @@ function renderCard({ rwy, headwind, tailwind, crosswind, required, available, f
   const totalPct = required.total > 0 ? Math.round((totalMargin / required.total) * 100) : 0;
 
   const windParts = [];
-  if (headwind > 0) windParts.push(`Head ${Math.round(headwind)} kt`);
-  if (tailwind > 0) windParts.push(`<strong>Tail ${Math.round(tailwind)} kt</strong>`);
-  if (crosswind > 0) windParts.push(`Cross ${Math.round(crosswind)} kt`);
-  if (windParts.length === 0) windParts.push('Calm');
+  if (headwind > 0) windParts.push(`${t('windHead')} ${Math.round(headwind)} kt`);
+  if (tailwind > 0) windParts.push(`<strong>${t('windTail')} ${Math.round(tailwind)} kt</strong>`);
+  if (crosswind > 0) windParts.push(`${t('windCross')} ${Math.round(crosswind)} kt`);
+  if (windParts.length === 0) windParts.push(t('windCalm'));
 
-  const surfaceLabel = surface === 'wet-grass'
-    ? 'nat gras (+25% GR)'
-    : 'droog gras (+15% GR)';
+  const surfaceLabel = surface === 'wet-grass' ? t('cardSurfaceWet') : t('cardSurfaceDry');
 
   card.innerHTML = `
     <h3>RWY ${rwy.id} <span class="brg">(${rwy.brgTrue}°)</span> <span class="flag-icon">${flagIcon}</span></h3>
     <div class="wind-line">Wind: ${windParts.join(' · ')}</div>
     <table>
       <thead>
-        <tr><th></th><th>Required</th><th>Available</th><th>Margin</th></tr>
+        <tr><th></th><th>${t('cardRequired')}</th><th>${t('cardAvailable')}</th><th>${t('cardMargin')}</th></tr>
       </thead>
       <tbody>
-        <tr><td>Ground roll</td><td>${required.groundRoll} m</td><td>${available.toraM} m</td><td>${formatMargin(grMargin, grPct)}</td></tr>
-        <tr><td>Over 15m obstacle</td><td>${required.total} m</td><td>${available.todaM} m</td><td>${formatMargin(totalMargin, totalPct)}</td></tr>
+        <tr><td>${t('cardGroundRoll')}</td><td>${required.groundRoll} m</td><td>${available.toraM} m</td><td>${formatMargin(grMargin, grPct)}</td></tr>
+        <tr><td>${t('cardOverObstacle')}</td><td>${required.total} m</td><td>${available.todaM} m</td><td>${formatMargin(totalMargin, totalPct)}</td></tr>
       </tbody>
     </table>
-    <div class="surface-line">Oppervlak: ${surfaceLabel}</div>
+    <div class="surface-line">${surfaceLabel}</div>
   `;
   return card;
 }
@@ -169,7 +258,11 @@ function init() {
     el.addEventListener('input', render);
     el.addEventListener('change', render);
   });
-  render();
+  $('lang-toggle').addEventListener('click', () => {
+    setLanguage(currentLang === 'nl' ? 'en' : 'nl');
+  });
+  $('btn-print').addEventListener('click', () => window.print());
+  setLanguage(currentLang); // applies translations + initial render
 }
 
 if (document.readyState === 'loading') {

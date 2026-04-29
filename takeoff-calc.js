@@ -177,7 +177,7 @@ export function validateInputs({ tow, oat, pa, tailwind, crosswind }) {
   const warnings = [];
   if (tow > 1043) warnings.push({
     code: 'tow-over-poh', severity: 'warning',
-    message: 'TOW boven POH-tabelrange (max 1043 kg). Berekening geëxtrapoleerd; gebruik conservatief.',
+    message: 'TOW boven POH-tabel (max 1043 kg). PH-GYS MTOW is 1089 kg (gecorrigeerd), maar Section 5 gaat alleen tot 1043 kg — afstand wordt geëxtrapoleerd, gebruik conservatief.',
   });
   if (tailwind > 10) warnings.push({
     code: 'tailwind-over-poh', severity: 'error',

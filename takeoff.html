@@ -21,56 +21,56 @@
   <header>
     <div class="header-left">
       <span class="logo" aria-label="SVS Logo">SVS</span>
-      <h1>PH-GYS Takeoff Distance — EHHV</h1>
+      <h1 data-i18n="title">PH-GYS Takeoff Distance — EHHV</h1>
     </div>
     <div class="header-right">
-      <a href="index.html" class="back-link">← Weight &amp; Balance</a>
+      <a href="index.html" class="back-link" data-i18n="backLink">← Weight &amp; Balance</a>
+      <button id="lang-toggle" type="button" aria-label="Toggle language" data-i18n="langToggle">EN</button>
     </div>
-    <p class="disclaimer">
-      <strong>De pilot-in-command (PIC) blijft te allen tijde verantwoordelijk</strong>
-      voor de go/no-go beslissing. Berekening is slechts hulpmiddel; verifieer tegen actuele POH en omstandigheden.
+    <p class="disclaimer" data-i18n="disclaimer">
+      <strong>De pilot-in-command (PIC) blijft te allen tijde verantwoordelijk</strong> voor de go/no-go beslissing. Berekening is slechts hulpmiddel; verifieer tegen actuele POH en omstandigheden.
     </p>
   </header>
 
   <main class="takeoff-main">
 
     <section class="input-panel">
-      <h2>Invoer</h2>
+      <h2 data-i18n="inputHeader">Invoer</h2>
 
       <div class="input-grid">
-        <label>TOW (kg)
+        <label><span data-i18n="lblTow">TOW (kg)</span>
           <input type="number" id="in-tow" step="1" min="600" max="1100">
         </label>
 
-        <label>OAT (°C)
+        <label><span data-i18n="lblOat">OAT (°C)</span>
           <input type="number" id="in-oat" step="1" value="15">
         </label>
 
-        <label>QNH (hPa)
+        <label><span data-i18n="lblQnh">QNH (hPa)</span>
           <input type="number" id="in-qnh" step="1" value="1013">
         </label>
 
-        <label>Wind richting (°)
+        <label><span data-i18n="lblWindDir">Wind richting (°)</span>
           <input type="number" id="in-wind-dir" step="10" min="0" max="360" value="0">
         </label>
 
-        <label>Wind (kt)
+        <label><span data-i18n="lblWindSpeed">Wind (kt)</span>
           <input type="number" id="in-wind-speed" step="1" min="0" value="0">
         </label>
 
-        <label>Gust (kt)
+        <label><span data-i18n="lblWindGust">Gust (kt)</span>
           <input type="number" id="in-wind-gust" step="1" min="0" placeholder="optioneel">
         </label>
       </div>
 
       <fieldset class="surface-fieldset">
-        <legend>Oppervlak</legend>
-        <label><input type="radio" name="surface" value="dry-grass" checked> Droog gras (+15%)</label>
-        <label><input type="radio" name="surface" value="wet-grass"> Nat gras (+25%)</label>
+        <legend data-i18n="lblSurface">Oppervlak</legend>
+        <label><input type="radio" name="surface" value="dry-grass" checked> <span data-i18n="dryGrass">Droog gras (+15%)</span></label>
+        <label><input type="radio" name="surface" value="wet-grass"> <span data-i18n="wetGrass">Nat gras (+25%)</span></label>
       </fieldset>
 
       <fieldset class="runway-fieldset">
-        <legend>Actieve baan/banen</legend>
+        <legend data-i18n="lblRwy">Actieve baan/banen</legend>
         <div id="runway-checkboxes"></div>
       </fieldset>
     </section>
@@ -84,28 +84,18 @@
     <section id="runway-cards" class="runway-cards"></section>
 
     <div class="actions-bar">
-      <button type="button" id="btn-print" class="btn-print" title="Sla op als PDF via browser-print">
+      <button type="button" id="btn-print" class="btn-print-subtle" data-i18n="printBtn" title="Sla op als PDF via browser-print">
         Print / Save as PDF
       </button>
     </div>
 
     <footer class="takeoff-footer">
-      <p>Berekening op basis van Cessna F172N AFM Section 5 (Edition 1, Aug 1976).
-         Declared distances per <a href="https://www.lvnl.nl/en/eaip" target="_blank" rel="noopener">AIP EHHV AD 2.13</a>.
-         Slechts hulpmiddel voor planning.</p>
+      <p data-i18n="footer">Berekening op basis van Cessna F172N AFM Section 5 (Edition 1, Aug 1976). Declared distances per <a href="https://www.lvnl.nl/en/eaip" target="_blank" rel="noopener">AIP EHHV AD 2.13</a>. Slechts hulpmiddel voor planning.</p>
       <p class="footer-links">
-        <a href="takeoff-tables.html" class="poh-tables-link" title="POH takeoff distance tables (printable PDF)">📄 POH-tabellen</a>
+        <a href="takeoff-tables.html" class="poh-tables-link" data-i18n="pohLink" title="POH takeoff distance tables (printable PDF)">📄 POH-tabellen</a>
       </p>
     </footer>
 
   </main>
-
-  <script>
-    // Print button — uses native browser print → "Save as PDF"
-    document.addEventListener('DOMContentLoaded', () => {
-      const btn = document.getElementById('btn-print');
-      if (btn) btn.addEventListener('click', () => window.print());
-    });
-  </script>
 </body>
 </html>
