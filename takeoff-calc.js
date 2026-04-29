@@ -1,6 +1,10 @@
 // takeoff-calc.js — pure calculation functions (no DOM access)
 // All functions are pure and unit-tested via takeoff-calc.test.js
 
+import {
+  PA_VALUES_FT, OAT_VALUES_C, WEIGHTS_KG, TABLES_BY_WEIGHT,
+} from './takeoff-data.js';
+
 export function pressureAltitude(elevationFt, qnhHpa) {
   return elevationFt + (1013 - qnhHpa) * 27;
 }
@@ -19,4 +23,91 @@ export function windComponents(rwyBrgDeg, windDirDeg, windSpeedKt) {
     headwind: windSpeedKt * Math.cos(rad),
     crosswind: Math.abs(windSpeedKt * Math.sin(rad)),
   };
+}
+
+/**
+ * Returns interpolated takeoff distance for given weight, pressure altitude,
+ * and OAT. Returns { groundRoll, total, outOfRange } in meters.
+ *
+ * Out-of-range cases:
+ *   - PA outside [0, 8000]: clamped, outOfRange=true
+ *   - OAT outside [0, 40]:  clamped, outOfRange=true
+ *   - Weight > 1043 kg: extrapolated linearly from the 953→1043 trend, outOfRange=true
+ *   - Weight < 862 kg:  uses 862 kg values (don't extrapolate downward — POH covers it),
+ *                       outOfRange=false
+ */
+export function lookupTakeoffDistance(weightKg, paFt, oatC) {
+  const paClamped = Math.max(PA_VALUES_FT[0], Math.min(PA_VALUES_FT.at(-1), paFt));
+  const oatClamped = Math.max(OAT_VALUES_C[0], Math.min(OAT_VALUES_C.at(-1), oatC));
+  const inRangeAtm = paClamped === paFt && oatClamped === oatC;
+
+  // Bilinear at each weight table
+  const perWeight = TABLES_BY_WEIGHT.map((table) =>
+    bilinear(table, paClamped, oatClamped)
+  );
+  // perWeight = [{gr, total}, {gr, total}, {gr, total}] for [862, 953, 1043]
+
+  let result;
+  let weightOOR = false;
+  if (weightKg <= WEIGHTS_KG[0]) {
+    result = perWeight[0];
+  } else if (weightKg <= WEIGHTS_KG[1]) {
+    const f = (weightKg - WEIGHTS_KG[0]) / (WEIGHTS_KG[1] - WEIGHTS_KG[0]);
+    result = lerpPair(perWeight[0], perWeight[1], f);
+  } else if (weightKg <= WEIGHTS_KG[2]) {
+    const f = (weightKg - WEIGHTS_KG[1]) / (WEIGHTS_KG[2] - WEIGHTS_KG[1]);
+    result = lerpPair(perWeight[1], perWeight[2], f);
+  } else {
+    // Extrapolate above 1043 kg using the 953→1043 trend
+    const f = (weightKg - WEIGHTS_KG[1]) / (WEIGHTS_KG[2] - WEIGHTS_KG[1]);
+    result = lerpPair(perWeight[1], perWeight[2], f);
+    weightOOR = true;
+  }
+
+  return {
+    groundRoll: Math.round(result.gr),
+    total: Math.round(result.total),
+    outOfRange: weightOOR || !inRangeAtm,
+  };
+}
+
+function bilinear(table, paFt, oatC) {
+  const paIdx = lowerIndex(PA_VALUES_FT, paFt);
+  const oatIdx = lowerIndex(OAT_VALUES_C, oatC);
+  const paLo = PA_VALUES_FT[paIdx];
+  const paHi = PA_VALUES_FT[paIdx + 1] ?? paLo;
+  const oatLo = OAT_VALUES_C[oatIdx];
+  const oatHi = OAT_VALUES_C[oatIdx + 1] ?? oatLo;
+  const fPa = paHi === paLo ? 0 : (paFt - paLo) / (paHi - paLo);
+  const fOat = oatHi === oatLo ? 0 : (oatC - oatLo) / (oatHi - oatLo);
+
+  const c00 = table[paIdx][oatIdx];
+  const c01 = table[paIdx][Math.min(oatIdx + 1, OAT_VALUES_C.length - 1)];
+  const c10 = table[Math.min(paIdx + 1, PA_VALUES_FT.length - 1)][oatIdx];
+  const c11 = table[Math.min(paIdx + 1, PA_VALUES_FT.length - 1)][Math.min(oatIdx + 1, OAT_VALUES_C.length - 1)];
+
+  return {
+    gr: bilinScalar(c00[0], c01[0], c10[0], c11[0], fPa, fOat),
+    total: bilinScalar(c00[1], c01[1], c10[1], c11[1], fPa, fOat),
+  };
+}
+
+function bilinScalar(v00, v01, v10, v11, fPa, fOat) {
+  const a = v00 + fOat * (v01 - v00);
+  const b = v10 + fOat * (v11 - v10);
+  return a + fPa * (b - a);
+}
+
+function lerpPair(lo, hi, f) {
+  return {
+    gr: lo.gr + f * (hi.gr - lo.gr),
+    total: lo.total + f * (hi.total - lo.total),
+  };
+}
+
+function lowerIndex(arr, value) {
+  for (let i = arr.length - 2; i >= 0; i--) {
+    if (value >= arr[i]) return i;
+  }
+  return 0;
 }
