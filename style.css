@@ -771,11 +771,20 @@ footer {
 .runway-card.flag-orange { border-left-color: #E68A1A; }
 .runway-card.flag-red    { border-left-color: var(--error); }
 
-.runway-card h3 {
-  margin: 0 0 0.5rem 0;
+.runway-card .card-head {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-bottom: 0.4rem;
+}
+.runway-card .card-head-text { flex: 1; min-width: 0; }
+.runway-card .runway-chart {
+  width: 70px;
+  height: 70px;
+  flex-shrink: 0;
+}
+.runway-card h3 {
+  margin: 0 0 0.3rem 0;
   font-size: 1.1rem;
 }
 .runway-card h3 .brg { color: #777; font-weight: 400; font-size: 0.85em; margin-left: 0.4rem; }
@@ -959,11 +968,27 @@ body.poh-tables-page {
   font-style: italic;
 }
 
+.poh-table-block { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .poh-table {
   width: 100%;
+  min-width: 540px; /* keeps the 5-temp × 2-metric grid legible; scrolls horizontally on phones */
   border-collapse: collapse;
   font-size: 0.85rem;
   font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Mobile responsive tweaks ---------- */
+@media (max-width: 480px) {
+  .takeoff-page header h1 { font-size: 1.05rem; }
+  .takeoff-page header .header-right { gap: 0.4rem; flex-wrap: wrap; }
+  .takeoff-page .back-link { padding: 0.3rem 0.55rem; font-size: 0.9rem; }
+  .takeoff-page .input-grid { grid-template-columns: repeat(2, 1fr); }
+  .runway-cards { grid-template-columns: 1fr; }
+  .runway-card .runway-chart { width: 56px; height: 56px; }
+  .runway-card table { font-size: 0.8rem; }
+  .runway-card th, .runway-card td { padding: 0.2rem 0.25rem; }
+  .poh-tables-header { padding: 0.75rem 1rem; }
+  .poh-tables-header h1 { font-size: 1rem; }
 }
 .poh-table th, .poh-table td {
   border: 1px solid #ccc;

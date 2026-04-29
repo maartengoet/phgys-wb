@@ -182,16 +182,14 @@ function render() {
     cardsEl.appendChild(renderCard({
       rwy, headwind, tailwind, crosswind: crosswindLimit,
       required: corrected, available: { toraM: rwy.toraM, todaM: rwy.todaM },
-      flag, surface,
+      flag, surface, windDir, windSpeed: upperSpeed,
     }));
   }
 }
 
-function renderCard({ rwy, headwind, tailwind, crosswind, required, available, flag, surface }) {
+function renderCard({ rwy, headwind, tailwind, crosswind, required, available, flag, surface, windDir, windSpeed }) {
   const card = document.createElement('div');
   card.className = `runway-card flag-${flag}`;
-
-  const flagIcon = { green: '🟢', orange: '🟠', red: '🔴' }[flag];
 
   const grMargin = available.toraM - required.groundRoll;
   const grPct = required.groundRoll > 0 ? Math.round((grMargin / required.groundRoll) * 100) : 0;
@@ -207,8 +205,13 @@ function renderCard({ rwy, headwind, tailwind, crosswind, required, available, f
   const surfaceLabel = surface === 'wet-grass' ? t('cardSurfaceWet') : t('cardSurfaceDry');
 
   card.innerHTML = `
-    <h3>RWY ${rwy.id} <span class="brg">(${rwy.brgTrue}°)</span> <span class="flag-icon">${flagIcon}</span></h3>
-    <div class="wind-line">Wind: ${windParts.join(' · ')}</div>
+    <div class="card-head">
+      <div class="card-head-text">
+        <h3>RWY ${rwy.id} <span class="brg">(${rwy.brgTrue}°)</span></h3>
+        <div class="wind-line">Wind: ${windParts.join(' · ')}</div>
+      </div>
+      ${renderRunwayChart(rwy, flag, windDir, windSpeed)}
+    </div>
     <table>
       <thead>
         <tr><th></th><th>${t('cardRequired')}</th><th>${t('cardAvailable')}</th><th>${t('cardMargin')}</th></tr>
@@ -221,6 +224,53 @@ function renderCard({ rwy, headwind, tailwind, crosswind, required, available, f
     <div class="surface-line">${surfaceLabel}</div>
   `;
   return card;
+}
+
+// Mini compass chart per runway: SVG 100×100 viewBox, runway oriented to true
+// bearing in the flag colour, optional wind-from arrow.
+function renderRunwayChart(rwy, flag, windDir, windSpeed) {
+  const flagColor = { green: '#27ae60', orange: '#e67e22', red: '#c0392b' }[flag];
+  const oppositeNum = ((parseInt(rwy.id, 10) + 18 - 1) % 36) + 1;
+  const oppositeStr = String(oppositeNum).padStart(2, '0');
+
+  // Counter-rotate the labels so they stay upright relative to the page
+  const labelRot = -rwy.brgTrue;
+
+  let windSvg = '';
+  if (windSpeed > 0) {
+    // Wind FROM windDir → tail at the wind-from edge, head pointing inward
+    const R = 40;
+    const inner = 18;
+    const rad = windDir * Math.PI / 180;
+    const tailX = 50 + Math.sin(rad) * R;
+    const tailY = 50 - Math.cos(rad) * R;
+    const headX = 50 + Math.sin(rad) * inner;
+    const headY = 50 - Math.cos(rad) * inner;
+    windSvg = `
+      <g class="wind-arrow">
+        <line x1="${tailX.toFixed(1)}" y1="${tailY.toFixed(1)}" x2="${headX.toFixed(1)}" y2="${headY.toFixed(1)}"
+              stroke="#3498db" stroke-width="2" stroke-linecap="round" marker-end="url(#wind-head)"/>
+      </g>
+    `;
+  }
+
+  return `
+    <svg class="runway-chart" viewBox="0 0 100 100" role="img" aria-label="Runway ${rwy.id} oriëntatie">
+      <defs>
+        <marker id="wind-head" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 Z" fill="#3498db"/>
+        </marker>
+      </defs>
+      <circle cx="50" cy="50" r="46" fill="#fafafa" stroke="#ccc" stroke-width="1"/>
+      <text x="50" y="9" text-anchor="middle" font-size="8" fill="#777">N</text>
+      <g transform="rotate(${rwy.brgTrue}, 50, 50)">
+        <rect x="44" y="14" width="12" height="72" rx="3" fill="${flagColor}" opacity="0.92"/>
+        <g transform="rotate(${labelRot}, 50, 19)"><text x="50" y="21" text-anchor="middle" font-size="7" fill="#fff" font-weight="700">${rwy.id}</text></g>
+        <g transform="rotate(${labelRot}, 50, 81)"><text x="50" y="83" text-anchor="middle" font-size="7" fill="#fff" font-weight="700">${oppositeStr}</text></g>
+      </g>
+      ${windSvg}
+    </svg>
+  `;
 }
 
 function formatMargin(m, pct) {
