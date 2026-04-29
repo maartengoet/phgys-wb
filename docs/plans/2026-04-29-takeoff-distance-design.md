@@ -106,7 +106,7 @@ For TOW > 1043 kg: linearly extrapolate using the 950→1043 trend; flag promine
 Applied in this order (per POH notes 3 and 4):
 
 a) **Surface** (POH note 4 — "for operation on a dry grass runway, increase distances by 15% of the ground roll figure"):
-   - Compute `Δ_surface = factor × GR_baseline` where `factor` is 0.15 (dry grass) or 0.25 (wet grass)
+   - Compute `Δ_surface = factor × GR_baseline` where `factor` is 0.15 (dry grass) or 0.45 (wet grass, per PH-GYS POH annotation)
    - `GR_corrected = GR_baseline + Δ_surface`
    - `total_corrected = total_baseline + Δ_surface` (same absolute meters added to both per POH wording)
 
@@ -198,7 +198,7 @@ Manual verification (no test framework yet in repo):
 
 ## Open items
 
-- Wet-grass factor: design uses **+25% on ground roll**. The handwritten annotation on the POH chart ("wet grass +4-5°"?) is unclear. Implementation should preserve the current factor as a documented constant for easy adjustment later.
+- Wet-grass factor: implementation uses **+45% on ground roll** per the PH-GYS POH annotation.
 
 ## File layout
 

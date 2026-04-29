@@ -39,6 +39,20 @@
 
 Combined baggage (Area 1 + Area 2): max 54 kg.
 
+Note: the AFM loading graph uses 23 kg for Baggage Area 2. The PH-GYS quick reference card shows 22 kg in one row, while the POH/source data and existing calculator limit use 23 kg. Keep this at 23 kg unless SVS explicitly adopts 22 kg as an operating policy.
+
+## W&B Calculation Sequence
+
+The calculator follows the PH-GYS quick reference card sequence:
+
+1. Basic Empty Weight + occupants + baggage = Zero Fuel Weight.
+2. Add usable fuel at 0.72 kg/l to get Ramp Weight.
+3. Subtract taxi fuel at the fuel arm to get Takeoff Weight.
+4. Subtract trip fuel at the fuel arm to get Landing Weight.
+5. Check both Takeoff Weight and Landing Weight against the normal-category CG envelope.
+
+The takeoff-distance page receives the calculated Takeoff Weight after taxi fuel.
+
 ## CG Limits
 
 ### Normal Category
@@ -84,6 +98,26 @@ Used for the graphical envelope check (Weight vs Moment):
 | 4 (aft, max) | 980.56 | 952 | 952 x 1.03 |
 | 5 (aft, mid) | 911.55 | 885 | 885 x 1.03 |
 | 6 (aft, min) | 700.4 | 680 | 680 x 1.03 |
+
+## Takeoff Performance Source Data
+
+The takeoff-distance calculator uses the Cessna F172N AFM Section 5 short-field takeoff tables:
+
+- Weights: 862 kg, 953 kg, 1043 kg.
+- Pressure altitude: sea level through 8000 ft in 1000 ft steps.
+- OAT: 0, 10, 20, 30, 40 °C.
+- Conditions: flaps up, full throttle prior to brake release, paved level dry runway, zero wind.
+
+The source CSV is `docs/soft_field_takeoff_distance.csv`, transcribed from `docs/soft_field_to_862.pdf`, `docs/soft_field_to_953.pdf`, and `docs/soft_field_to_1043.pdf`. The data tests compare every table cell in code against this CSV.
+
+Corrections applied after table lookup:
+
+- Dry grass: add 15% of the ground roll figure to both ground roll and total-over-15m distance, per POH note 4.
+- Wet grass: add 45% of the ground roll figure to both distances, per the handwritten PH-GYS POH annotation.
+- Headwind: decrease distances 10% for each 9 kt headwind, per POH note 3.
+- Tailwind: increase distances 10% for each 2 kt tailwind, valid up to 10 kt tailwind per POH note 3.
+
+EHHV runway elevation, true bearings, and declared TORA/TODA values are taken from AIP EHHV AD 2.12/2.13. These values are tested explicitly in `takeoff-data.test.js`.
 
 ## Data Sources
 

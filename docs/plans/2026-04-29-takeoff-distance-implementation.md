@@ -588,12 +588,12 @@ test('applyCorrections: dry grass adds 15% of GR to both distances', () => {
   assert.equal(r.total, 430);
 });
 
-test('applyCorrections: wet grass adds 25% of GR to both distances', () => {
+test('applyCorrections: wet grass adds 45% of GR to both distances', () => {
   const r = applyCorrections({ groundRoll: 200, total: 400 }, {
     surface: 'wet-grass', headwind: 0, tailwind: 0,
   });
-  assert.equal(r.groundRoll, 250);
-  assert.equal(r.total, 450);
+  assert.equal(r.groundRoll, 290);
+  assert.equal(r.total, 490);
 });
 
 test('applyCorrections: 9 kt headwind reduces by 10%', () => {
@@ -636,7 +636,7 @@ Append to `takeoff-calc.js`:
 ```js
 const SURFACE_FACTORS = {
   'dry-grass': 0.15,
-  'wet-grass': 0.25,
+  'wet-grass': 0.45,
 };
 
 /**
@@ -915,7 +915,7 @@ head -80 style.css
       <fieldset class="surface-fieldset">
         <legend>Oppervlak</legend>
         <label><input type="radio" name="surface" value="dry-grass" checked> Droog gras (+15%)</label>
-        <label><input type="radio" name="surface" value="wet-grass"> Nat gras (+25%)</label>
+        <label><input type="radio" name="surface" value="wet-grass"> Nat gras (+45%)</label>
       </fieldset>
 
       <fieldset class="runway-fieldset">
@@ -1195,7 +1195,7 @@ function renderCard({ rwy, headwind, tailwind, crosswind, required, available, f
   if (windParts.length === 0) windParts.push('Calm');
 
   const surfaceLabel = surface === 'wet-grass'
-    ? 'nat gras (+25% GR)'
+    ? 'nat gras (+45% GR)'
     : 'droog gras (+15% GR)';
 
   card.innerHTML = `

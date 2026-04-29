@@ -114,7 +114,8 @@ function lowerIndex(arr, value) {
 
 const SURFACE_FACTORS = {
   'dry-grass': 0.15,
-  'wet-grass': 0.25,
+  // PH-GYS POH copy has a handwritten wet-grass note reading +45%.
+  'wet-grass': 0.45,
 };
 
 /**

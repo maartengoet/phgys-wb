@@ -8,7 +8,8 @@ Interactive weight & balance plus takeoff-distance planning tools for **PH-GYS**
 
 ### Weight & Balance (`/`)
 - Real-time W&B calculation with CG envelope check
-- Interactive CG Moment Envelope graph (Normal + Utility category)
+- Ramp, takeoff, and landing weight calculation with taxi/trip fuel burn
+- Interactive CG Moment Envelope graph (Normal + Utility category, takeoff + landing points)
 - Bilingual (NL/EN) with persistent language preference
 - Print to A4 with PIC signature block
 - Fuel display in liters, kg, and US gallons
@@ -16,7 +17,7 @@ Interactive weight & balance plus takeoff-distance planning tools for **PH-GYS**
 ### Takeoff Distance — EHHV (`/takeoff.html`)
 - Per-runway takeoff performance check for EHHV (Hilversum)
 - POH lookup with bilinear interpolation over pressure altitude / OAT and linear interpolation over weight
-- Wind, gust, dry/wet grass surface corrections per POH notes 3 and 4
+- Wind, gust, dry-grass correction per POH note 4 and PH-GYS wet-grass correction
 - Color flag (green/orange/red) against TORA/TODA with 1.25× safety factor
 - Edge-case warnings: TOW > 1043 kg (POH-table extrapolation), tailwind > 10 kt, OAT/PA out of range, crosswind > 15 kt
 - Per-runway compass mini-chart (click to enlarge with details)

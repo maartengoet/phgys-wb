@@ -99,12 +99,12 @@ test('applyCorrections: dry grass adds 15% of GR to both distances', () => {
   assert.equal(r.total, 430);
 });
 
-test('applyCorrections: wet grass adds 25% of GR to both distances', () => {
+test('applyCorrections: wet grass adds 45% of GR to both distances', () => {
   const r = applyCorrections({ groundRoll: 200, total: 400 }, {
     surface: 'wet-grass', headwind: 0, tailwind: 0,
   });
-  assert.equal(r.groundRoll, 250);
-  assert.equal(r.total, 450);
+  assert.equal(r.groundRoll, 290);
+  assert.equal(r.total, 490);
 });
 
 test('applyCorrections: 9 kt headwind reduces by 10%', () => {

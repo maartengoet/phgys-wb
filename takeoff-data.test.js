@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   TABLE_1043KG, TABLE_953KG, TABLE_862KG,
   PA_VALUES_FT, OAT_VALUES_C, WEIGHTS_KG, TABLES_BY_WEIGHT,
@@ -76,3 +77,85 @@ test('EHHV runways: 6 entries with positive distances', () => {
     assert.ok(r.toraM > 0 && r.todaM > 0);
   }
 });
+
+test('EHHV runways match AIP AD 2.12/2.13 declared distances', () => {
+  assert.deepEqual(EHHV_RUNWAYS, [
+    { id: '07', brgTrue: 69,  toraM: 540, todaM: 540 },
+    { id: '25', brgTrue: 249, toraM: 600, todaM: 600 },
+    { id: '12', brgTrue: 123, toraM: 660, todaM: 660 },
+    { id: '30', brgTrue: 303, toraM: 660, todaM: 660 },
+    { id: '18', brgTrue: 179, toraM: 700, todaM: 700 },
+    { id: '36', brgTrue: 359, toraM: 700, todaM: 700 },
+  ]);
+});
+
+test('all POH table cells match soft_field_takeoff_distance.csv', () => {
+  const csv = readFileSync('Docs/soft_field_takeoff_distance.csv', 'utf8');
+  const rows = parseCsv(csv);
+  const header = rows.shift();
+  const col = Object.fromEntries(header.map((name, index) => [name, index]));
+  const tableByWeight = new Map([
+    [862, TABLE_862KG],
+    [953, TABLE_953KG],
+    [1043, TABLE_1043KG],
+  ]);
+
+  for (const row of rows) {
+    const weight = Number(row[col.weight_kg]);
+    const pa = Number(row[col.pressure_altitude_ft]);
+    const table = tableByWeight.get(weight);
+    const paIdx = PA_VALUES_FT.indexOf(pa);
+    assert.ok(table, `unexpected weight ${weight}`);
+    assert.notEqual(paIdx, -1, `unexpected pressure altitude ${pa}`);
+
+    for (const oat of OAT_VALUES_C) {
+      const oatIdx = OAT_VALUES_C.indexOf(oat);
+      const gr = Number(row[col[`ground_roll_${oat}c_m`]]);
+      const total = Number(row[col[`total_clear_15m_${oat}c_m`]]);
+      assert.deepEqual(
+        table[paIdx][oatIdx],
+        [gr, total],
+        `${weight} kg / ${pa} ft / ${oat}C`
+      );
+    }
+  }
+});
+
+function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let field = '';
+  let quoted = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (quoted) {
+      if (ch === '"' && text[i + 1] === '"') {
+        field += '"';
+        i++;
+      } else if (ch === '"') {
+        quoted = false;
+      } else {
+        field += ch;
+      }
+    } else if (ch === '"') {
+      quoted = true;
+    } else if (ch === ',') {
+      row.push(field);
+      field = '';
+    } else if (ch === '\n') {
+      row.push(field);
+      if (row.some((cell) => cell !== '')) rows.push(row);
+      row = [];
+      field = '';
+    } else if (ch !== '\r') {
+      field += ch;
+    }
+  }
+
+  if (field !== '' || row.length > 0) {
+    row.push(field);
+    rows.push(row);
+  }
+  return rows;
+}

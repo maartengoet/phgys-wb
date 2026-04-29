@@ -231,9 +231,13 @@ function calculate() {
   const bag1Kg  = readInput('input-bag1');
   const bag2Kg  = readInput('input-bag2');
   const fuelL   = readInput('input-fuel');
+  const taxiL   = readInput('input-taxi');
+  const tripL   = readInput('input-trip');
 
   // 2. Convert fuel liters to kg
   const fuelKg = fuelL * AIRCRAFT.fuelDensity;
+  const taxiFuelKg = taxiL * AIRCRAFT.fuelDensity;
+  const tripFuelKg = tripL * AIRCRAFT.fuelDensity;
 
   // 3. Moments for each row
   const momentEmpty = AIRCRAFT.emptyMoment;
@@ -242,21 +246,32 @@ function calculate() {
   const momentBag1  = bag1Kg  * S.bag1.arm;
   const momentBag2  = bag2Kg  * S.bag2.arm;
   const momentFuel  = fuelKg  * S.fuel.arm;
+  const momentTaxi  = taxiFuelKg * S.fuel.arm;
+  const momentTrip  = tripFuelKg * S.fuel.arm;
 
   // 4. Subtotals
   const zfwWeight  = AIRCRAFT.emptyWeight + pilotKg + rearKg + bag1Kg + bag2Kg;
   const zfwMoment  = momentEmpty + momentPilot + momentRear + momentBag1 + momentBag2;
   const zfwArm     = zfwWeight > 0 ? zfwMoment / zfwWeight : 0;
 
-  const towWeight  = zfwWeight + fuelKg;
-  const towMoment  = zfwMoment + momentFuel;
+  const rampWeight = zfwWeight + fuelKg;
+  const rampMoment = zfwMoment + momentFuel;
+  const rampArm    = rampWeight > 0 ? rampMoment / rampWeight : 0;
+
+  const towWeight  = rampWeight - taxiFuelKg;
+  const towMoment  = rampMoment - momentTaxi;
   const towArm     = towWeight > 0 ? towMoment / towWeight : 0;
 
-  // CG for TOW
-  const cgTow = towWeight > 0 ? towMoment / towWeight : 0;
+  const landingWeight = towWeight - tripFuelKg;
+  const landingMoment = towMoment - momentTrip;
+  const landingArm    = landingWeight > 0 ? landingMoment / landingWeight : 0;
+
+  // CG for TOW and landing
+  const cgTow = towArm;
+  const cgLanding = landingArm;
 
   // Detect whether any user input was provided (not just empty weight)
-  const hasInput = (pilotKg + rearKg + bag1Kg + bag2Kg + fuelL) > 0;
+  const hasInput = (pilotKg + rearKg + bag1Kg + bag2Kg + fuelL + taxiL + tripL) > 0;
 
   // 5. Update the DOM — individual row moments
   setText('moment-empty', momentEmpty.toFixed(2));
@@ -269,17 +284,34 @@ function calculate() {
   // Fuel kg conversion display
   const fuelUSG = fuelL / 3.78541;
   setText('weight-fuel', fuelL ? fuelKg.toFixed(1) + ' kg / ' + fuelUSG.toFixed(1) + ' USG' : '— kg');
+  setText('weight-taxi', taxiL ? taxiFuelKg.toFixed(1) + ' kg' : '— kg');
+  setText('weight-trip', tripL ? tripFuelKg.toFixed(1) + ' kg' : '— kg');
 
   // ZFW subtotal
   setText('total-zfw',  hasInput ? zfwWeight.toFixed(1) : '—');
   setText('arm-zfw',    hasInput ? zfwArm.toFixed(2) : '—');
   setText('moment-zfw', hasInput ? zfwMoment.toFixed(2) : '—');
 
+  // Ramp subtotal
+  setText('total-ramp',  hasInput ? rampWeight.toFixed(1) : '—');
+  setText('arm-ramp',    hasInput ? rampArm.toFixed(2) : '—');
+  setText('moment-ramp', hasInput ? rampMoment.toFixed(2) : '—');
+
+  // Fuel burn rows
+  setText('moment-taxi', taxiL ? '-' + momentTaxi.toFixed(2) : '—');
+  setText('moment-trip', tripL ? '-' + momentTrip.toFixed(2) : '—');
+
   // TOW subtotal
   setText('total-tow',  hasInput ? towWeight.toFixed(1) : '—');
   setText('arm-tow',    hasInput ? towArm.toFixed(2) : '—');
   setText('moment-tow', hasInput ? towMoment.toFixed(2) : '—');
   setText('cg-tow',     hasInput ? cgTow.toFixed(2) : '—');
+
+  // Landing subtotal
+  setText('total-landing',  hasInput ? landingWeight.toFixed(1) : '—');
+  setText('arm-landing',    hasInput ? landingArm.toFixed(2) : '—');
+  setText('moment-landing', hasInput ? landingMoment.toFixed(2) : '—');
+  setText('cg-landing',     hasInput ? cgLanding.toFixed(2) : '—');
 
   // Persist W&B inputs to sessionStorage so they survive a round-trip via
   // takeoff.html (the user can come back to find their inputs intact).
@@ -300,13 +332,16 @@ function calculate() {
 
   // Validation & warnings
   updateWarnings({
-    bag1Kg, bag2Kg, fuelL,
-    towWeight, cgTow, hasInput,
+    bag1Kg, bag2Kg, fuelL, taxiL, tripL,
+    rampWeight, towWeight, landingWeight,
+    cgTow, cgLanding, hasInput,
   });
 
   // Update graph data and redraw CG Moment Envelope
   graphData.towWeight = hasInput ? towWeight : 0;
   graphData.towMoment = hasInput ? towMoment : 0;
+  graphData.landingWeight = hasInput ? landingWeight : 0;
+  graphData.landingMoment = hasInput ? landingMoment : 0;
   drawGraph();
 }
 
@@ -340,8 +375,9 @@ function setStatus(id, ok, message) {
  * Check all weight / CG limits and update DOM indicators.
  * Called from calculate() after every recalc.
  */
-function updateWarnings({ bag1Kg, bag2Kg, fuelL,
-                          towWeight, cgTow, hasInput }) {
+function updateWarnings({ bag1Kg, bag2Kg, fuelL, taxiL, tripL,
+                          rampWeight, towWeight, landingWeight,
+                          cgTow, cgLanding, hasInput }) {
   const S = AIRCRAFT.stations;
 
   // ── Input-level checks ────────────────────────────────────
@@ -349,10 +385,14 @@ function updateWarnings({ bag1Kg, bag2Kg, fuelL,
   const bag2Over    = bag2Kg > S.bag2.maxKg;
   const combBagOver = (bag1Kg + bag2Kg) > AIRCRAFT.maxBaggageCombined;
   const fuelOver    = fuelL > AIRCRAFT.maxFuelLiters;
+  const taxiOver    = taxiL > fuelL;
+  const tripOver    = tripL > Math.max(0, fuelL - taxiL);
 
   setInputError('input-bag1', bag1Over || combBagOver);
   setInputError('input-bag2', bag2Over || combBagOver);
   setInputError('input-fuel', fuelOver);
+  setInputError('input-taxi', taxiOver);
+  setInputError('input-trip', tripOver);
 
   // ── ZFW status ────────────────────────────────────────────
   const t = TRANSLATIONS[currentLang];
@@ -368,6 +408,18 @@ function updateWarnings({ bag1Kg, bag2Kg, fuelL,
     setStatus('status-zfw', true, '');
   }
 
+  // ── Ramp Weight status ────────────────────────────────────
+  const rampOver = rampWeight > AIRCRAFT.maxRampWeight;
+  if (fuelOver) {
+    setStatus('status-ramp', false, t.fuelOver);
+  } else if (rampOver) {
+    setStatus('status-ramp', false, t.overMax);
+  } else if (hasInput) {
+    setStatus('status-ramp', true, t.ok);
+  } else {
+    setStatus('status-ramp', true, '');
+  }
+
   // ── Takeoff Weight status ─────────────────────────────────
   const towOver     = towWeight > AIRCRAFT.maxTakeoffWeight;
   const towCgFwd    = towWeight > 0 && !towOver &&
@@ -376,6 +428,8 @@ function updateWarnings({ bag1Kg, bag2Kg, fuelL,
                       cgTow > getAftCGLimit(towWeight, 'normal');
   if (fuelOver) {
     setStatus('status-tow', false, t.fuelOver);
+  } else if (taxiOver) {
+    setStatus('status-tow', false, t.taxiOver);
   } else if (towOver) {
     setStatus('status-tow', false, t.overMax);
   } else if (towCgFwd) {
@@ -387,11 +441,36 @@ function updateWarnings({ bag1Kg, bag2Kg, fuelL,
   } else {
     setStatus('status-tow', true, '');
   }
+
+  // ── Landing Weight status ─────────────────────────────────
+  const landingOver = landingWeight > AIRCRAFT.maxTakeoffWeight;
+  const landingCgFwd = landingWeight > 0 && !landingOver &&
+                       cgLanding < getForwardCGLimit(landingWeight, 'normal');
+  const landingCgAft = landingWeight > 0 && !landingOver &&
+                       cgLanding > getAftCGLimit(landingWeight, 'normal');
+  if (fuelOver) {
+    setStatus('status-landing', false, t.fuelOver);
+  } else if (taxiOver) {
+    setStatus('status-landing', false, t.taxiOver);
+  } else if (tripOver) {
+    setStatus('status-landing', false, t.tripOver);
+  } else if (landingOver) {
+    setStatus('status-landing', false, t.overMax);
+  } else if (landingCgFwd) {
+    setStatus('status-landing', false, t.cgFwd);
+  } else if (landingCgAft) {
+    setStatus('status-landing', false, t.cgAft);
+  } else if (hasInput) {
+    setStatus('status-landing', true, t.ok);
+  } else {
+    setStatus('status-landing', true, '');
+  }
 }
 
 // ─── Graph State (set by calculate(), read by drawGraph()) ──
 let graphData = {
   towWeight: 0, towMoment: 0,
+  landingWeight: 0, landingMoment: 0,
 };
 
 // ─── Point-in-Polygon test (ray-casting) ────────────────────
@@ -579,16 +658,14 @@ function drawGraph() {
   ctx.textBaseline = 'bottom';
   ctx.fillText(TRANSLATIONS[currentLang].graphUtility, toX(952 * 0.96), toY(952) - 4);
 
-  // ── 6. Plot Takeoff Weight point ────────────────────────────
-  const { towWeight, towMoment } = graphData;
+  // ── 6. Plot Takeoff and Landing points ────────────────────
+  function plotEnvelopePoint(weight, moment, label, okColor, yOffset = 0) {
+    if (weight <= 0) return;
+    const inNormal = pointInPolygon(moment, weight, normalPoly);
+    const color = inNormal ? okColor : '#C62828';
+    const x = toX(moment);
+    const y = toY(weight);
 
-  if (towWeight > 0) {
-    const inNormal = pointInPolygon(towMoment, towWeight, normalPoly);
-    const color = inNormal ? '#1565C0' : '#C62828';
-    const x = toX(towMoment);
-    const y = toY(towWeight);
-
-    // Outer ring
     ctx.beginPath();
     ctx.arc(x, y, 7, 0, Math.PI * 2);
     ctx.fillStyle = '#fff';
@@ -597,30 +674,31 @@ function drawGraph() {
     ctx.lineWidth = 2.5;
     ctx.stroke();
 
-    // Inner dot
     ctx.beginPath();
     ctx.arc(x, y, 3.5, 0, Math.PI * 2);
     ctx.fillStyle = color;
     ctx.fill();
 
-    // Label
-    const label = TRANSLATIONS[currentLang].graphTakeoff;
     ctx.fillStyle = color;
     ctx.font = 'bold 10px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(label, x + 11, y);
+    ctx.fillText(label, x + 11, y + yOffset);
   }
+
+  const { towWeight, towMoment, landingWeight, landingMoment } = graphData;
+  plotEnvelopePoint(towWeight, towMoment, TRANSLATIONS[currentLang].graphTakeoff, '#1565C0', -6);
+  plotEnvelopePoint(landingWeight, landingMoment, TRANSLATIONS[currentLang].graphLanding, '#2E7D32', 8);
 
   // ── 7. Legend ──────────────────────────────────────────────
   const legendX = W - padding.right - 130;
-  const legendY = H - padding.bottom - 60;
+  const legendY = H - padding.bottom - 76;
 
   ctx.fillStyle = 'rgba(255,255,255,0.9)';
-  ctx.fillRect(legendX - 8, legendY - 6, 134, 52);
+  ctx.fillRect(legendX - 8, legendY - 6, 134, 68);
   ctx.strokeStyle = '#ddd';
   ctx.lineWidth = 1;
-  ctx.strokeRect(legendX - 8, legendY - 6, 134, 52);
+  ctx.strokeRect(legendX - 8, legendY - 6, 134, 68);
 
   ctx.font = '10px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
   ctx.textAlign = 'left';
@@ -633,21 +711,28 @@ function drawGraph() {
   ctx.fill();
   ctx.fillText(TRANSLATIONS[currentLang].graphTakeoff, legendX + 16, legendY + 8);
 
-  // Outside legend
+  // Landing weight legend
   ctx.beginPath();
   ctx.arc(legendX + 6, legendY + 24, 4, 0, Math.PI * 2);
+  ctx.fillStyle = '#2E7D32';
+  ctx.fill();
+  ctx.fillText(TRANSLATIONS[currentLang].graphLanding, legendX + 16, legendY + 24);
+
+  // Outside legend
+  ctx.beginPath();
+  ctx.arc(legendX + 6, legendY + 40, 4, 0, Math.PI * 2);
   ctx.fillStyle = '#C62828';
   ctx.fill();
-  ctx.fillText(TRANSLATIONS[currentLang].graphOutside, legendX + 16, legendY + 24);
+  ctx.fillText(TRANSLATIONS[currentLang].graphOutside, legendX + 16, legendY + 40);
 
   // Normal envelope legend
   ctx.fillStyle = 'rgba(232, 115, 26, 0.3)';
-  ctx.fillRect(legendX, legendY + 36, 12, 4);
+  ctx.fillRect(legendX, legendY + 52, 12, 4);
   ctx.strokeStyle = '#E8731A';
   ctx.lineWidth = 1;
-  ctx.strokeRect(legendX, legendY + 36, 12, 4);
+  ctx.strokeRect(legendX, legendY + 52, 12, 4);
   ctx.fillStyle = '#555';
-  ctx.fillText(TRANSLATIONS[currentLang].graphEnvelope, legendX + 16, legendY + 38);
+  ctx.fillText(TRANSLATIONS[currentLang].graphEnvelope, legendX + 16, legendY + 54);
 }
 
 // ─── Debounce helper ────────────────────────────────────────
@@ -663,7 +748,7 @@ function debounce(fn, ms) {
 const WB_INPUT_IDS = [
   'input-pilot', 'input-rear',
   'input-bag1',  'input-bag2',
-  'input-fuel',
+  'input-fuel', 'input-taxi', 'input-trip',
 ];
 
 // ─── Event Listeners ────────────────────────────────────────

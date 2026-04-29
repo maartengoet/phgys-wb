@@ -58,13 +58,14 @@ flowchart TD
     A[User enters values] -->|input event| B[calculate]
     B --> C[Compute moments per station]
     C --> D[Compute ZFW subtotal]
-    D --> E[Add fuel → TOW]
-    E --> F[Compute CG = moment / weight]
-    F --> G[updateWarnings]
-    F --> H[drawGraph]
-    G --> I[Update status pills: OK / warning]
-    H --> J[Draw CG envelope on Canvas]
-    H --> K[Plot TOW point on graph]
+    D --> E[Add fuel → ramp weight]
+    E --> F[Subtract taxi/trip fuel]
+    F --> G[Compute TOW/LDW CG]
+    G --> H[updateWarnings]
+    G --> I[drawGraph]
+    H --> J[Update status pills: OK / warning]
+    I --> K[Draw CG envelope on Canvas]
+    I --> L[Plot TOW and LDW points]
 ```
 
 ## Key Components
@@ -73,10 +74,10 @@ flowchart TD
 
 The `AIRCRAFT` constant holds all type-specific data (empty weight, station arms, CG limits). The `calculate()` function runs on every input change and:
 
-1. Reads all input values (5 fields: pilot, rear, bag1, bag2, fuel)
+1. Reads all input values (7 fields: pilot, rear, bag1, bag2, fuel, taxi fuel, trip fuel)
 2. Converts fuel liters to kg (x 0.72)
 3. Computes moment per row (weight x arm)
-4. Derives subtotals (ZFW, TOW) with CG
+4. Derives subtotals (ZFW, ramp weight, TOW, landing weight) with CG
 5. Updates all DOM elements
 6. Calls `updateWarnings()` and `drawGraph()`
 
@@ -86,6 +87,7 @@ Draws a Weight vs Moment chart with:
 - Normal Category envelope (filled polygon)
 - Utility Category envelope (dashed)
 - Takeoff Weight point (blue, turns red if outside)
+- Landing Weight point (green, turns red if outside)
 
 The envelope polygon coordinates are derived from CG limits:
 - moment = weight x CG_limit
@@ -100,7 +102,7 @@ A `TRANSLATIONS` object holds all NL/EN strings. `setLanguage()` updates all ele
 
 ### Validation
 
-Checks weight limits (MTOW, baggage), fuel limits, and CG envelope bounds. Displays green "OK" or red warning pills. Input fields get a red border when exceeding their limit.
+Checks weight limits (ramp, MTOW, baggage), fuel/taxi/trip limits, and CG envelope bounds for takeoff and landing. Displays green "OK" or red warning pills. Input fields get a red border when exceeding their limit.
 
 ## Takeoff Distance Calculator
 
@@ -117,7 +119,7 @@ flowchart TD
     A[User inputs] --> B[pressureAltitude\nPA = 3 + 27 × 1013-QNH]
     B --> C[lookupTakeoffDistance\nbilinear PA × OAT,\nlinear over weight]
     A --> D[windComponents per runway\nhead/cross/tail incl. gust]
-    C --> E[applyCorrections\nsurface 15/25%, wind ±10%]
+    C --> E[applyCorrections\nsurface 15/45%, wind ±10%]
     D --> E
     E --> F[runwayFlag\ngreen/orange/red\nvs TORA/TODA × 1.25]
     E --> G[validateInputs\nTOW>1043, tailwind>10, ...]
@@ -127,12 +129,12 @@ flowchart TD
 
 ### Bridge from W&B
 
-When `calculate()` runs on `/`, it writes the computed TOW (and the W&B input values) to `sessionStorage`. The takeoff page reads `phgys-tow` on load and pre-fills the TOW field. Returning to the W&B page restores the saved inputs so a round-trip preserves your entries.
+When `calculate()` runs on `/`, it writes the computed TOW after taxi fuel (and the W&B input values) to `sessionStorage`. The takeoff page reads `phgys-tow` on load and pre-fills the TOW field. Returning to the W&B page restores the saved inputs so a round-trip preserves your entries.
 
 ### Tests
 
 `takeoff-calc.test.js` and `takeoff-data.test.js` run under `node --test` (built-in, requires Node ≥ 18, no npm install). The data tests catch transcription errors via shape, corner-cell, and monotonicity assertions across PA, OAT, and weight.
 
 ```bash
-node --test     # 33 tests as of last commit
+node --test     # 35 tests as of last commit
 ```
