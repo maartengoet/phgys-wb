@@ -111,3 +111,41 @@ function lowerIndex(arr, value) {
   }
   return 0;
 }
+
+const SURFACE_FACTORS = {
+  'dry-grass': 0.15,
+  'wet-grass': 0.25,
+};
+
+/**
+ * Applies POH-style corrections in this order: surface, then wind.
+ * Input: baseline distances from POH lookup.
+ * Returns corrected distances rounded to nearest meter.
+ *
+ * surface: 'dry-grass' | 'wet-grass'
+ * headwind: kt (use 0 if tailwind component instead)
+ * tailwind: kt (use 0 if headwind component instead)
+ *
+ * Per POH note 4: surface increase is 15% of ground roll figure, ADDED TO
+ * BOTH ground roll and total distance.
+ * Per POH note 3: headwind decreases distance by 10% per 9 kt;
+ * tailwind increases by 10% per 2 kt (valid up to 10 kt tailwind).
+ */
+export function applyCorrections(baseline, { surface, headwind, tailwind }) {
+  const factor = SURFACE_FACTORS[surface] ?? 0;
+  const delta = factor * baseline.groundRoll;
+  let gr = baseline.groundRoll + delta;
+  let total = baseline.total + delta;
+
+  if (headwind > 0) {
+    const m = 1 - 0.10 * (headwind / 9);
+    gr *= m;
+    total *= m;
+  } else if (tailwind > 0) {
+    const m = 1 + 0.10 * (tailwind / 2);
+    gr *= m;
+    total *= m;
+  }
+
+  return { groundRoll: Math.round(gr), total: Math.round(total) };
+}

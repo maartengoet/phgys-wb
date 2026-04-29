@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { pressureAltitude, windComponents, lookupTakeoffDistance } from './takeoff-calc.js';
+import { pressureAltitude, windComponents, lookupTakeoffDistance, applyCorrections } from './takeoff-calc.js';
 import { TABLE_1043KG, TABLE_953KG, TABLE_862KG } from './takeoff-data.js';
 
 test('pressureAltitude: ISA QNH returns elevation', () => {
@@ -88,4 +88,47 @@ test('lookup: extrapolation above 1043 kg flagged in result', () => {
   assert.ok(r.outOfRange === true, 'outOfRange should be true');
   // Extrapolated GR should exceed the 1043 value at SL/0°C
   assert.ok(r.groundRoll > TABLE_1043KG[0][0][0], 'extrapolated GR should be > 1043 kg value');
+});
+
+test('applyCorrections: dry grass adds 15% of GR to both distances', () => {
+  const r = applyCorrections({ groundRoll: 200, total: 400 }, {
+    surface: 'dry-grass', headwind: 0, tailwind: 0,
+  });
+  // ΔSurface = 0.15 × 200 = 30
+  assert.equal(r.groundRoll, 230);
+  assert.equal(r.total, 430);
+});
+
+test('applyCorrections: wet grass adds 25% of GR to both distances', () => {
+  const r = applyCorrections({ groundRoll: 200, total: 400 }, {
+    surface: 'wet-grass', headwind: 0, tailwind: 0,
+  });
+  assert.equal(r.groundRoll, 250);
+  assert.equal(r.total, 450);
+});
+
+test('applyCorrections: 9 kt headwind reduces by 10%', () => {
+  const r = applyCorrections({ groundRoll: 200, total: 400 }, {
+    surface: 'dry-grass', headwind: 9, tailwind: 0,
+  });
+  // After surface: 230, 430. After 10% headwind reduction: 207, 387.
+  assert.equal(r.groundRoll, 207);
+  assert.equal(r.total, 387);
+});
+
+test('applyCorrections: 2 kt tailwind increases by 10%', () => {
+  const r = applyCorrections({ groundRoll: 200, total: 400 }, {
+    surface: 'dry-grass', headwind: 0, tailwind: 2,
+  });
+  // After surface: 230, 430. After +10%: 253, 473.
+  assert.equal(r.groundRoll, 253);
+  assert.equal(r.total, 473);
+});
+
+test('applyCorrections: calm wind, dry grass — only surface adds', () => {
+  const r = applyCorrections({ groundRoll: 200, total: 400 }, {
+    surface: 'dry-grass', headwind: 0, tailwind: 0,
+  });
+  assert.equal(r.groundRoll, 230);
+  assert.equal(r.total, 430);
 });
