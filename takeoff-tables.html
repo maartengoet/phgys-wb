@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="POH takeoff distance tables for PH-GYS — Cessna F172N">
+  <meta name="theme-color" content="#E8731A">
+  <link rel="icon" href="favicon.ico">
+  <title>PH-GYS POH Takeoff Distance Tables</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="takeoff-tables.js"></script>
+</head>
+<body class="poh-tables-page">
+
+  <header class="poh-tables-header">
+    <div class="header-left">
+      <span class="logo" aria-label="SVS Logo">SVS</span>
+      <h1>PH-GYS — Takeoff Distance Tables</h1>
+    </div>
+    <div class="header-right no-print">
+      <a href="takeoff.html" class="back-link">← Calculator</a>
+      <button type="button" id="btn-print-tables" class="btn-print">Print / Save as PDF</button>
+    </div>
+  </header>
+
+  <main class="poh-tables-main">
+
+    <section class="poh-meta">
+      <p><strong>Aircraft:</strong> Reims/Cessna F172N — PH-GYS — Lycoming O-320-D2G, 160 BHP, McCauley fixed-pitch propeller.</p>
+      <p><strong>Source:</strong> Cessna F172N Aircraft Flight Manual Section 5 (Edition 1, August 1976), pages 5-6, 5-7, 5-8.</p>
+      <p><strong>Configuration:</strong> Short field technique, flaps up, full throttle prior to brake release. Distances are in meters.</p>
+      <p><strong>Baseline conditions:</strong> Paved level dry runway, zero wind. Apply correction factors below for actual conditions.</p>
+    </section>
+
+    <section class="poh-table-block" id="block-1043"></section>
+    <section class="poh-table-block" id="block-953"></section>
+    <section class="poh-table-block" id="block-862"></section>
+
+    <section class="poh-corrections">
+      <h2>Correction factors</h2>
+      <ol>
+        <li><strong>Mixture:</strong> Prior to takeoff from fields above 3000 ft / 914 m elevation, lean for maximum RPM in a full-throttle static runup.</li>
+        <li><strong>Headwind:</strong> Decrease distances 10% for each 9 kt of headwind.</li>
+        <li><strong>Tailwind:</strong> For tailwinds up to 10 kt, increase distances 10% for each 2 kt.</li>
+        <li><strong>Dry grass:</strong> Increase distances by 15% of the "ground roll" figure.</li>
+        <li><strong>Wet grass (advisory):</strong> Increase distances by 25% of the "ground roll" figure (non-POH; conservative planning factor).</li>
+      </ol>
+    </section>
+
+    <section class="poh-pic-disclaimer">
+      <p><strong>De pilot-in-command (PIC) blijft te allen tijde verantwoordelijk</strong> voor de go/no-go beslissing. Deze tabellen zijn een hulpmiddel voor planning; verifieer altijd tegen de actuele POH en omstandigheden.</p>
+    </section>
+
+  </main>
+</body>
+</html>

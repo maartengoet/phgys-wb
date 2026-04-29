@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Takeoff distance calculator for PH-GYS at EHHV (Hilversum)">
+  <meta name="theme-color" content="#E8731A">
+  <link rel="icon" href="favicon.ico">
+  <title>PH-GYS Takeoff Distance — EHHV</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="takeoff.js"></script>
+  <!-- Privacy-friendly analytics by Plausible -->
+  <script async src="https://plausible.io/js/pa-ze2t24bYhIg1FQC4gT1rp.js"></script>
+  <script>
+    window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+    plausible.init()
+  </script>
+</head>
+<body class="takeoff-page">
+
+  <header>
+    <div class="header-left">
+      <span class="logo" aria-label="SVS Logo">SVS</span>
+      <h1 data-i18n="title">PH-GYS Takeoff Distance — EHHV</h1>
+    </div>
+    <div class="header-right">
+      <a href="index.html" class="back-link" data-i18n="backLink">← Weight &amp; Balance</a>
+      <button id="lang-toggle" type="button" aria-label="Toggle language" data-i18n="langToggle">EN</button>
+    </div>
+    <p class="disclaimer" data-i18n="disclaimer">
+      <strong>De pilot-in-command (PIC) blijft te allen tijde verantwoordelijk</strong> voor de go/no-go beslissing. Berekening is slechts hulpmiddel; verifieer tegen actuele POH en omstandigheden.
+    </p>
+  </header>
+
+  <main class="takeoff-main">
+
+    <section class="input-panel">
+      <h2 data-i18n="inputHeader">Invoer</h2>
+
+      <div class="input-grid">
+        <label><span data-i18n="lblTow">TOW (kg)</span>
+          <input type="number" id="in-tow" step="1" min="600" max="1100">
+        </label>
+
+        <label><span data-i18n="lblOat">OAT (°C)</span>
+          <input type="number" id="in-oat" step="1" value="15">
+        </label>
+
+        <label><span data-i18n="lblQnh">QNH (hPa)</span>
+          <input type="number" id="in-qnh" step="1" value="1013">
+        </label>
+
+        <label><span data-i18n="lblWindDir">Wind richting (°)</span>
+          <input type="number" id="in-wind-dir" step="10" min="0" max="360" value="0">
+        </label>
+
+        <label><span data-i18n="lblWindSpeed">Wind (kt)</span>
+          <input type="number" id="in-wind-speed" step="1" min="0" value="0">
+        </label>
+
+        <label><span data-i18n="lblWindGust">Gust (kt)</span>
+          <input type="number" id="in-wind-gust" step="1" min="0" placeholder="optioneel">
+        </label>
+      </div>
+
+      <fieldset class="surface-fieldset">
+        <legend data-i18n="lblSurface">Oppervlak</legend>
+        <label><input type="radio" name="surface" value="dry-grass" checked> <span data-i18n="dryGrass">Droog gras (+15%)</span></label>
+        <label><input type="radio" name="surface" value="wet-grass"> <span data-i18n="wetGrass">Nat gras (+25%)</span></label>
+      </fieldset>
+
+      <fieldset class="runway-fieldset">
+        <legend data-i18n="lblRwy">Actieve baan/banen</legend>
+        <div id="runway-checkboxes"></div>
+      </fieldset>
+    </section>
+
+    <section class="derived-panel">
+      <span id="derived-line">PA: — · ISA dev: —</span>
+    </section>
+
+    <section id="warnings"></section>
+
+    <section id="runway-cards" class="runway-cards"></section>
+
+    <div class="actions-bar">
+      <button type="button" id="btn-print" class="btn-print-subtle" data-i18n="printBtn" title="Sla op als PDF via browser-print">
+        Print / Save as PDF
+      </button>
+    </div>
+
+    <footer class="takeoff-footer">
+      <p data-i18n="footer">Berekening op basis van Cessna F172N AFM Section 5 (Edition 1, Aug 1976). Declared distances per <a href="https://www.lvnl.nl/en/eaip" target="_blank" rel="noopener">AIP EHHV AD 2.13</a>. Slechts hulpmiddel voor planning.</p>
+      <p class="footer-links">
+        <a href="takeoff-tables.html" class="poh-tables-link" data-i18n="pohLink" title="POH takeoff distance tables (printable PDF)">📄 POH-tabellen</a>
+      </p>
+    </footer>
+
+    <!-- Runway chart modal: opened when a card's compass chart is clicked. -->
+    <div id="rwy-modal" class="rwy-modal" hidden role="dialog" aria-modal="true" aria-labelledby="rwy-modal-title">
+      <div class="rwy-modal-backdrop" data-modal-close></div>
+      <div class="rwy-modal-card" role="document">
+        <button type="button" class="rwy-modal-close" data-modal-close aria-label="Close">×</button>
+        <h3 id="rwy-modal-title"></h3>
+        <div class="rwy-modal-chart" id="rwy-modal-chart"></div>
+        <dl class="rwy-modal-info" id="rwy-modal-info"></dl>
+      </div>
+    </div>
+
+  </main>
+</body>
+</html>

@@ -62,6 +62,7 @@ const TRANSLATIONS = {
     tripOver: 'REIS > BRANDSTOF',
     maxRamp: 'max 1092 kg',
     maxTow: 'max 1089 kg',
+    runwayLink: 'Runway performance check (EHHV) →',
   },
   en: {
     title: 'Weight & Balance',
@@ -118,6 +119,7 @@ const TRANSLATIONS = {
     tripOver: 'TRIP > FUEL',
     maxRamp: 'max 1092 kg',
     maxTow: 'max 1089 kg',
+    runwayLink: 'Runway performance check (EHHV) →',
   },
 };
 
@@ -278,6 +280,23 @@ function calculate() {
   setText('arm-tow',    hasInput ? towArm.toFixed(2) : '—');
   setText('moment-tow', hasInput ? towMoment.toFixed(2) : '—');
   setText('cg-tow',     hasInput ? cgTow.toFixed(2) : '—');
+
+  // Persist W&B inputs to sessionStorage so they survive a round-trip via
+  // takeoff.html (the user can come back to find their inputs intact).
+  WB_INPUT_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      if (el.value) sessionStorage.setItem(`phgys-${id}`, el.value);
+      else sessionStorage.removeItem(`phgys-${id}`);
+    }
+  });
+
+  // Bridge TOW to the takeoff distance page (sessionStorage, same-session only)
+  if (hasInput) {
+    sessionStorage.setItem('phgys-tow', towWeight.toFixed(1));
+  } else {
+    sessionStorage.removeItem('phgys-tow');
+  }
 
   // Validation & warnings
   updateWarnings({
@@ -640,15 +659,26 @@ function debounce(fn, ms) {
   };
 }
 
+// W&B input IDs (used by listener wiring, persistence, and reset)
+const WB_INPUT_IDS = [
+  'input-pilot', 'input-rear',
+  'input-bag1',  'input-bag2',
+  'input-fuel',
+];
+
 // ─── Event Listeners ────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  const inputIds = [
-    'input-pilot', 'input-rear',
-    'input-bag1',  'input-bag2',
-    'input-fuel',
-  ];
+  // Restore previously entered W&B inputs (e.g. after coming back from
+  // takeoff.html) before wiring listeners — pre-fill, then calculate.
+  WB_INPUT_IDS.forEach(id => {
+    const stored = sessionStorage.getItem(`phgys-${id}`);
+    if (stored !== null) {
+      const el = document.getElementById(id);
+      if (el) el.value = stored;
+    }
+  });
 
-  inputIds.forEach(id => {
+  WB_INPUT_IDS.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('input', calculate);
   });
@@ -697,11 +727,9 @@ function printPage() {
 
 // ─── Reset Form ─────────────────────────────────────────────
 function resetForm() {
-  const inputIds = [
-    'input-pilot', 'input-rear',
-    'input-bag1',  'input-bag2',
-    'input-fuel',
-  ];
+  // Also clear persisted inputs so a "Reset" wipes the saved values.
+  WB_INPUT_IDS.forEach(id => sessionStorage.removeItem(`phgys-${id}`));
+  const inputIds = WB_INPUT_IDS;
   inputIds.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
