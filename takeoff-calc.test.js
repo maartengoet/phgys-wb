@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { pressureAltitude, windComponents, lookupTakeoffDistance, applyCorrections } from './takeoff-calc.js';
+import { pressureAltitude, windComponents, lookupTakeoffDistance, applyCorrections, runwayFlag, validateInputs } from './takeoff-calc.js';
 import { TABLE_1043KG, TABLE_953KG, TABLE_862KG } from './takeoff-data.js';
 
 test('pressureAltitude: ISA QNH returns elevation', () => {
@@ -131,4 +131,58 @@ test('applyCorrections: calm wind, dry grass — only surface adds', () => {
   });
   assert.equal(r.groundRoll, 230);
   assert.equal(r.total, 430);
+});
+
+const SAFETY_FACTOR = 1.25;
+
+test('runwayFlag: green when both metrics have ≥25% margin', () => {
+  // required GR 200, total 400; available TORA 600, TODA 600
+  // GR margin: 600 ≥ 200×1.25=250 ✓
+  // total margin: 600 ≥ 400×1.25=500 ✓
+  assert.equal(runwayFlag(
+    { groundRoll: 200, total: 400 }, { toraM: 600, todaM: 600 }, SAFETY_FACTOR,
+  ), 'green');
+});
+
+test('runwayFlag: orange when any metric is between 0 and 25% margin', () => {
+  // required total 481, TODA 600 → 600 ≥ 481 (yes) but 600 < 481×1.25=601.25 → orange
+  assert.equal(runwayFlag(
+    { groundRoll: 200, total: 481 }, { toraM: 600, todaM: 600 }, SAFETY_FACTOR,
+  ), 'orange');
+});
+
+test('runwayFlag: red when any metric exceeds available', () => {
+  assert.equal(runwayFlag(
+    { groundRoll: 700, total: 400 }, { toraM: 600, todaM: 600 }, SAFETY_FACTOR,
+  ), 'red');
+});
+
+test('validateInputs: TOW > 1043 → warning', () => {
+  const w = validateInputs({ tow: 1080, oat: 15, pa: 273, tailwind: 0, crosswind: 5 });
+  assert.ok(w.some(x => x.code === 'tow-over-poh'));
+});
+
+test('validateInputs: tailwind > 10 → error', () => {
+  const w = validateInputs({ tow: 1000, oat: 15, pa: 273, tailwind: 12, crosswind: 5 });
+  assert.ok(w.some(x => x.code === 'tailwind-over-poh' && x.severity === 'error'));
+});
+
+test('validateInputs: crosswind > 15 → warning', () => {
+  const w = validateInputs({ tow: 1000, oat: 15, pa: 273, tailwind: 0, crosswind: 17 });
+  assert.ok(w.some(x => x.code === 'crosswind-over-demo' && x.severity === 'warning'));
+});
+
+test('validateInputs: OAT outside [0, 40] → error', () => {
+  const w = validateInputs({ tow: 1000, oat: -5, pa: 273, tailwind: 0, crosswind: 0 });
+  assert.ok(w.some(x => x.code === 'oat-out-of-range'));
+});
+
+test('validateInputs: PA > 8000 → error', () => {
+  const w = validateInputs({ tow: 1000, oat: 15, pa: 8500, tailwind: 0, crosswind: 0 });
+  assert.ok(w.some(x => x.code === 'pa-out-of-range'));
+});
+
+test('validateInputs: nominal inputs return empty array', () => {
+  const w = validateInputs({ tow: 950, oat: 15, pa: 273, tailwind: 0, crosswind: 5 });
+  assert.equal(w.length, 0);
 });

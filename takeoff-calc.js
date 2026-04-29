@@ -149,3 +149,51 @@ export function applyCorrections(baseline, { surface, headwind, tailwind }) {
 
   return { groundRoll: Math.round(gr), total: Math.round(total) };
 }
+
+/**
+ * Returns 'green' | 'orange' | 'red' based on worst of the two metrics.
+ * green:  available ≥ required × safetyFactor for BOTH metrics
+ * orange: required ≤ available < required × safetyFactor on at least one metric
+ * red:    required > available on at least one metric
+ */
+export function runwayFlag(required, runway, safetyFactor) {
+  const grShortfall = required.groundRoll > runway.toraM;
+  const totalShortfall = required.total > runway.todaM;
+  if (grShortfall || totalShortfall) return 'red';
+
+  const grBelowSafety = runway.toraM < required.groundRoll * safetyFactor;
+  const totalBelowSafety = runway.todaM < required.total * safetyFactor;
+  if (grBelowSafety || totalBelowSafety) return 'orange';
+
+  return 'green';
+}
+
+/**
+ * Returns an array of warnings/errors for inputs that fall outside the POH or
+ * aircraft envelope. Each entry: { code, severity, message }.
+ * severity: 'warning' | 'error' | 'info'
+ */
+export function validateInputs({ tow, oat, pa, tailwind, crosswind }) {
+  const warnings = [];
+  if (tow > 1043) warnings.push({
+    code: 'tow-over-poh', severity: 'warning',
+    message: 'TOW boven POH-tabelrange (max 1043 kg). Berekening geëxtrapoleerd; gebruik conservatief.',
+  });
+  if (tailwind > 10) warnings.push({
+    code: 'tailwind-over-poh', severity: 'error',
+    message: 'Tailwind > 10 kt valt buiten POH-correctie. Resultaat onbetrouwbaar.',
+  });
+  if (oat < 0 || oat > 40) warnings.push({
+    code: 'oat-out-of-range', severity: 'error',
+    message: 'OAT buiten POH-range (0–40°C).',
+  });
+  if (pa > 8000) warnings.push({
+    code: 'pa-out-of-range', severity: 'error',
+    message: 'Pressure altitude buiten POH-range (max 8000 ft).',
+  });
+  if (crosswind > 15) warnings.push({
+    code: 'crosswind-over-demo', severity: 'warning',
+    message: 'Crosswind boven gedemonstreerd maximum (15 kt).',
+  });
+  return warnings;
+}
