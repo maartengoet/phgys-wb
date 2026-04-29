@@ -96,6 +96,17 @@
       </p>
     </footer>
 
+    <!-- Runway chart modal: opened when a card's compass chart is clicked. -->
+    <div id="rwy-modal" class="rwy-modal" hidden role="dialog" aria-modal="true" aria-labelledby="rwy-modal-title">
+      <div class="rwy-modal-backdrop" data-modal-close></div>
+      <div class="rwy-modal-card" role="document">
+        <button type="button" class="rwy-modal-close" data-modal-close aria-label="Close">×</button>
+        <h3 id="rwy-modal-title"></h3>
+        <div class="rwy-modal-chart" id="rwy-modal-chart"></div>
+        <dl class="rwy-modal-info" id="rwy-modal-info"></dl>
+      </div>
+    </div>
+
   </main>
 </body>
 </html>

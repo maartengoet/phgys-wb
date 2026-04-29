@@ -977,6 +977,104 @@ body.poh-tables-page {
   font-variant-numeric: tabular-nums;
 }
 
+/* ---------- Runway chart click target + modal ---------- */
+.runway-chart-button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: block;
+  border-radius: 50%;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  flex-shrink: 0;
+}
+.runway-chart-button:hover {
+  transform: scale(1.04);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+.runway-chart-button:focus-visible {
+  outline: 2px solid var(--svs-orange);
+  outline-offset: 2px;
+}
+
+.rwy-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.rwy-modal[hidden] { display: none; }
+.rwy-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  cursor: pointer;
+  animation: rwy-fade-in 0.15s ease-out;
+}
+.rwy-modal-card {
+  position: relative;
+  background: var(--bg-white);
+  border-radius: 8px;
+  padding: 1.5rem;
+  max-width: 460px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.25);
+  animation: rwy-pop-in 0.18s ease-out;
+}
+.rwy-modal-card h3 {
+  margin: 0 0 1rem 0;
+  text-align: center;
+  font-size: 1.2rem;
+  color: var(--svs-orange-dark);
+}
+.rwy-modal-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.6rem;
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  line-height: 1;
+  color: #888;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+}
+.rwy-modal-close:hover { color: var(--svs-orange-dark); }
+.rwy-modal-chart {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+.rwy-modal-chart svg {
+  width: 260px;
+  height: 260px;
+  max-width: 100%;
+  max-height: 60vh;
+}
+.rwy-modal-info {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.4rem 1rem;
+  font-size: 0.95rem;
+  margin: 0;
+}
+.rwy-modal-info dt { font-weight: 600; color: #555; margin: 0; }
+.rwy-modal-info dd { margin: 0; }
+
+@keyframes rwy-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes rwy-pop-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
 /* ---------- Mobile responsive tweaks ---------- */
 @media (max-width: 480px) {
   .takeoff-page header h1 { font-size: 1.05rem; }

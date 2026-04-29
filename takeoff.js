@@ -182,12 +182,14 @@ function render() {
     cardsEl.appendChild(renderCard({
       rwy, headwind, tailwind, crosswind: crosswindLimit,
       required: corrected, available: { toraM: rwy.toraM, todaM: rwy.todaM },
-      flag, surface, windDir, windSpeed: upperSpeed,
+      flag, surface,
+      windDir, windSpeed, windGust,
+      windDisplaySpeed: upperSpeed, // used by chart (worst-case for arrow length consistency)
     }));
   }
 }
 
-function renderCard({ rwy, headwind, tailwind, crosswind, required, available, flag, surface, windDir, windSpeed }) {
+function renderCard({ rwy, headwind, tailwind, crosswind, required, available, flag, surface, windDir, windSpeed, windGust, windDisplaySpeed }) {
   const card = document.createElement('div');
   card.className = `runway-card flag-${flag}`;
 
@@ -210,7 +212,7 @@ function renderCard({ rwy, headwind, tailwind, crosswind, required, available, f
         <h3>RWY ${rwy.id} <span class="brg">(${rwy.brgTrue}°)</span></h3>
         <div class="wind-line">Wind: ${windParts.join(' · ')}</div>
       </div>
-      ${renderRunwayChart(rwy, flag, windDir, windSpeed)}
+      <button type="button" class="runway-chart-button" aria-label="Open runway ${rwy.id} chart">${renderRunwayChart(rwy, flag, windDir, windDisplaySpeed)}</button>
     </div>
     <table>
       <thead>
@@ -223,6 +225,16 @@ function renderCard({ rwy, headwind, tailwind, crosswind, required, available, f
     </table>
     <div class="surface-line">${surfaceLabel}</div>
   `;
+
+  // Wire chart click → modal with the closure data
+  const chartBtn = card.querySelector('.runway-chart-button');
+  chartBtn.addEventListener('click', () => openRunwayModal({
+    rwy, flag,
+    windDir, windSpeed, windGust, windDisplaySpeed,
+    headwind, tailwind, crosswind,
+    required, available, surface,
+  }));
+
   return card;
 }
 
@@ -285,6 +297,56 @@ function appendWarning(parent, severity, message) {
   parent.appendChild(banner);
 }
 
+// ─── Runway chart modal ─────────────────────────────────
+
+function openRunwayModal({ rwy, flag, windDir, windSpeed, windGust, windDisplaySpeed, headwind, tailwind, crosswind, required, available, surface }) {
+  const modal = $('rwy-modal');
+  const flagIcon = { green: '🟢', orange: '🟠', red: '🔴' }[flag];
+  $('rwy-modal-title').textContent = `RWY ${rwy.id} (${rwy.brgTrue}°) ${flagIcon}`;
+  $('rwy-modal-chart').innerHTML = renderRunwayChart(rwy, flag, windDir, windDisplaySpeed);
+
+  const surfaceLabel = surface === 'wet-grass' ? t('cardSurfaceWet') : t('cardSurfaceDry');
+  const windRows = [];
+  if (headwind > 0) windRows.push([t('windHead'), `${Math.round(headwind)} kt`]);
+  if (tailwind > 0) windRows.push([t('windTail'), `${Math.round(tailwind)} kt`]);
+  if (crosswind > 0) windRows.push([t('windCross'), `${Math.round(crosswind)} kt`]);
+  if (windRows.length === 0) windRows.push([t('windCalm'), '—']);
+  if (windSpeed > 0 || windGust !== null) {
+    const dir = String(windDir).padStart(3, '0');
+    const gustPart = (windGust !== null && windGust !== windSpeed) ? ` G${Math.round(windGust)}` : '';
+    windRows.unshift(['Wind', `${dir}° / ${Math.round(windSpeed)} kt${gustPart}`]);
+  }
+
+  const distRows = [
+    [t('cardGroundRoll'), `${required.groundRoll} m / ${available.toraM} m TORA`],
+    [t('cardOverObstacle'), `${required.total} m / ${available.todaM} m TODA`],
+    [t('lblSurface'), surfaceLabel.replace(/^[^:]+:\s*/, '')],
+  ];
+
+  $('rwy-modal-info').innerHTML =
+    [...windRows, ...distRows].map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
+
+  modal.hidden = false;
+  document.body.style.overflow = 'hidden';
+}
+
+function closeRunwayModal() {
+  const modal = $('rwy-modal');
+  modal.hidden = true;
+  document.body.style.overflow = '';
+}
+
+function initModal() {
+  const modal = $('rwy-modal');
+  if (!modal) return;
+  modal.querySelectorAll('[data-modal-close]').forEach((el) => {
+    el.addEventListener('click', closeRunwayModal);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modal.hidden) closeRunwayModal();
+  });
+}
+
 // ─── Init ────────────────────────────────────────────────
 
 function buildRunwayCheckboxes() {
@@ -312,6 +374,7 @@ function init() {
     setLanguage(currentLang === 'nl' ? 'en' : 'nl');
   });
   $('btn-print').addEventListener('click', () => window.print());
+  initModal();
   setLanguage(currentLang); // applies translations + initial render
 }
 
