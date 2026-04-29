@@ -135,8 +135,8 @@ EHHV declared distances (from AIP EHHV AD 2.13, AIRAC AMDT 03/2026):
 
 ### 6. Color flag
 Worst of the two metrics (ground roll and obstacle distance) determines the flag:
-- 🟢 **Green** — `available ≥ required × 1.5` for both metrics (≥50% margin)
-- 🟠 **Orange** — `required ≤ available < required × 1.5` (any metric in this band)
+- 🟢 **Green** — `available ≥ required × 1.25` for both metrics (≥25% margin)
+- 🟠 **Orange** — `required ≤ available < required × 1.25` (any metric in this band)
 - 🔴 **Red** — `required > available` (any metric)
 
 Crosswind check (independent of distance):
@@ -151,7 +151,7 @@ Single page, two-column on desktop, stacked on mobile.
 **Input panel** (top, collapsible on mobile): all inputs from the section above.
 
 **Derived values** (one line, read-only):
-> `PA: 273 ft  ·  ISA dev: +5°C  ·  Density alt: 580 ft`
+> `PA: 273 ft  ·  ISA dev: +5°C`
 
 **Runway cards** (one per selected runway):
 ```
@@ -194,12 +194,11 @@ Manual verification (no test framework yet in repo):
 3. 5000 ft / 30°C / calm / 862 kg → bilinear interpolation matches POH table cell
 4. RWY 07, wind 250/15 → tailwind 14.1 kt, crosswind 5.1 kt → tailwind > 10 kt error fires
 5. TOW 1080 kg → out-of-range warning fires; extrapolation gives plausible monotonic increase
-6. Flag boundaries: required total = 400 m on RWY 25 (TODA 600 m) → margin 200 m / 50% → green/orange boundary; required total = 450 m → 33% margin → orange; required total = 700 m → red.
+6. Flag boundaries on RWY 25 (TODA 600 m): required = 480 m → 25% margin → green/orange boundary; required = 550 m → 9% margin → orange; required = 700 m → red.
 
 ## Open items
 
 - Wet-grass factor: design uses **+25% on ground roll**. The handwritten annotation on the POH chart ("wet grass +4-5°"?) is unclear. Implementation should preserve the current factor as a documented constant for easy adjustment later.
-- Density altitude: shown for awareness; not used in lookup (POH already accounts for temp + PA).
 
 ## File layout
 
