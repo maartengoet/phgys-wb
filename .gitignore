@@ -1,1 +1,5 @@
 claude.txt
+.DS_Store
+.claude/
+.wrangler/
+node_modules/
