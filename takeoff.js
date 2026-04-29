@@ -356,19 +356,72 @@ function buildRunwayCheckboxes() {
   ).join(' ');
 }
 
-function loadTowFromStorage() {
-  const stored = sessionStorage.getItem('phgys-tow');
-  if (stored && !isNaN(parseFloat(stored))) {
-    $('in-tow').value = parseFloat(stored).toFixed(1);
+// Persist all takeoff-page inputs so a round-trip to /takeoff-tables.html
+// (or anywhere else) doesn't lose what the pilot entered. Each persisted
+// number/string is keyed under "phgys-takeoff-<id>" in sessionStorage.
+const PERSISTED_INPUT_IDS = [
+  'in-tow', 'in-oat', 'in-qnh',
+  'in-wind-dir', 'in-wind-speed', 'in-wind-gust',
+];
+const SURFACE_KEY = 'phgys-takeoff-surface';
+const RUNWAYS_KEY = 'phgys-takeoff-runways';
+
+function persistInputs() {
+  for (const id of PERSISTED_INPUT_IDS) {
+    const el = document.getElementById(id);
+    if (!el) continue;
+    if (el.value !== '') sessionStorage.setItem(`phgys-takeoff-${id}`, el.value);
+    else sessionStorage.removeItem(`phgys-takeoff-${id}`);
   }
+  const surface = document.querySelector('input[name="surface"]:checked');
+  if (surface) sessionStorage.setItem(SURFACE_KEY, surface.value);
+  const rwys = Array.from(document.querySelectorAll('input[name="rwy"]:checked')).map((cb) => cb.value);
+  sessionStorage.setItem(RUNWAYS_KEY, JSON.stringify(rwys));
+}
+
+function restoreInputs() {
+  // TOW: prefer the takeoff-page value if present, otherwise fall back to
+  // the W&B-page-bridged value (phgys-tow). This way an explicit override on
+  // the takeoff page survives a round-trip; first-time visitors still get
+  // their W&B TOW pre-filled.
+  const towLocal = sessionStorage.getItem('phgys-takeoff-in-tow');
+  const towBridge = sessionStorage.getItem('phgys-tow');
+  if (towLocal !== null) {
+    $('in-tow').value = towLocal;
+  } else if (towBridge && !isNaN(parseFloat(towBridge))) {
+    $('in-tow').value = parseFloat(towBridge).toFixed(1);
+  }
+
+  for (const id of PERSISTED_INPUT_IDS) {
+    if (id === 'in-tow') continue;
+    const stored = sessionStorage.getItem(`phgys-takeoff-${id}`);
+    if (stored !== null) {
+      const el = document.getElementById(id);
+      if (el) el.value = stored;
+    }
+  }
+
+  const surface = sessionStorage.getItem(SURFACE_KEY);
+  if (surface) {
+    const radio = document.querySelector(`input[name="surface"][value="${surface}"]`);
+    if (radio) radio.checked = true;
+  }
+
+  try {
+    const rwys = JSON.parse(sessionStorage.getItem(RUNWAYS_KEY) || '[]');
+    for (const id of rwys) {
+      const cb = document.querySelector(`input[name="rwy"][value="${id}"]`);
+      if (cb) cb.checked = true;
+    }
+  } catch { /* ignore malformed payload */ }
 }
 
 function init() {
   buildRunwayCheckboxes();
-  loadTowFromStorage();
+  restoreInputs();
   document.querySelectorAll('input').forEach((el) => {
-    el.addEventListener('input', render);
-    el.addEventListener('change', render);
+    el.addEventListener('input', () => { persistInputs(); render(); });
+    el.addEventListener('change', () => { persistInputs(); render(); });
   });
   $('lang-toggle').addEventListener('click', () => {
     setLanguage(currentLang === 'nl' ? 'en' : 'nl');
